@@ -64,7 +64,8 @@ class SendOTPView(APIView):
             phone_otp.save()
             
             # Mock sending OTP (Print to console)
-            print(f"OTP for {phone_number}: {otp}")
+            print(f"OTP for {phone_number}: {otp}", flush=True)
+            logger.warning(f"OTP for {phone_number}: {otp}")
             
             sms_sent = True
             if not settings.DEBUG:

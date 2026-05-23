@@ -98,11 +98,14 @@ export default function LoginScreen() {
                     body: JSON.stringify({ phone_number: phone })
                 });
 
+                const data = await response.json();
                 if (response.ok) {
+                    if (data.otp) {
+                        Alert.alert("Dev Mode OTP", `Your test OTP is: ${data.otp}\n(This is shown in dev mode so you don't need to check backend logs)`);
+                    }
                     router.push({ pathname: '/auth/otp', params: { phone } });
                 } else {
-                    const error = await response.json();
-                    Alert.alert('Error', error.error || "Failed to send OTP");
+                    Alert.alert('Error', data.error || "Failed to send OTP");
                 }
             } catch (err) {
                 Alert.alert('Error', "Network request failed");

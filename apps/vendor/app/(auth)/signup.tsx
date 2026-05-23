@@ -60,23 +60,14 @@ export default function SignupScreen() {
                 body: JSON.stringify({ phone_number: formData.phone })
             });
 
+            const data = await response.json();
             if (response.ok) {
-                // Navigate to OTP, carrying over profile data if possible? 
-                // Actually, VerifyOTP redirects to SetupProfile. 
-                // We can just let the user fill details again there, OR pass them via Context/Params.
-                // For simplicity/reliability, let's rely on standard flow:
-                // Signup -> OTP -> Setup Profile (User fills Shop details there).
-                // The fields here (Business Name, Owner Name) duplicate SetupProfile.
-                // Maybe we should just use Signup for Phone/Password(if used) and rely on SetupProfile for details?
-                // The current UI asks for Business Name etc.
-                // Let's pass them as params to OTP screen, then to Setup screen? Too messy.
-                // Let's just navigate to OTP. The User "Creation" happens at Verify.
-                // Then SetupProfile asks for details. 
-                // We might want to "Pre-fill" SetupProfile if possible.
-                // For now, minimal complexity: Signup validates phone -> OTP.
+                if (data.otp) {
+                    alert(`Dev Mode OTP\nYour test OTP is: ${data.otp}\n(This is shown in dev mode so you don't need to check backend logs)`);
+                }
                 router.push({ pathname: '/(auth)/otp', params: { phone: formData.phone } });
             } else {
-                alert("Failed to send OTP");
+                alert(data.error || "Failed to send OTP");
             }
 
         } catch (error) {

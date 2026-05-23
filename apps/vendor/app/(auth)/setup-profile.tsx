@@ -2,6 +2,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View, ActivityIndicator, Alert } from 'react-native';
+import * as Location from 'expo-location';
 import { useAuth } from '@/context/AuthContext';
 import { VendorApiService } from '@/constants/ApiService';
 
@@ -20,13 +21,30 @@ export default function SetupProfileScreen() {
         }
 
         setLoading(true);
+        
+        let latitude = 12.9716;  // Fallback to Bangalore
+        let longitude = 77.5946;
+
+        try {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status === 'granted') {
+                const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+                latitude = loc.coords.latitude;
+                longitude = loc.coords.longitude;
+            } else {
+                console.warn("Location permission not granted, using fallback coordinates");
+            }
+        } catch (e) {
+            console.warn("Failed to get location, using fallback:", e);
+        }
+
         try {
             console.log("Creating profile with token:", token);
             await VendorApiService.saveProfile({
                 shop_name: shopName,
                 address: address,
-                latitude: 12.9716,
-                longitude: 77.5946
+                latitude: latitude,
+                longitude: longitude
             });
 
             // Profile Created
@@ -70,6 +88,9 @@ export default function SetupProfileScreen() {
                             value={address}
                             onChangeText={setAddress}
                         />
+                        <Text className="text-xs text-gray-500 mt-2">
+                            ℹ️ We will tag your shop using your current GPS coordinates to show it to nearby customers.
+                        </Text>
                     </View>
                 </View>
 
@@ -90,3 +111,4 @@ export default function SetupProfileScreen() {
         </SafeAreaView>
     );
 }
+

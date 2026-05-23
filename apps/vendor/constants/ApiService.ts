@@ -227,9 +227,27 @@ export const VendorApiService = {
     return res.json();
   },
 
+  getCategories: async () => {
+    const res = await authFetch(`/inventory/categories/`);
+    if (!res.ok) throw new Error('Failed to fetch categories');
+    const data = await res.json();
+    return Array.isArray(data) ? data : data.results || [];
+  },
+
   getDashboardStats: async () => {
     const res = await authFetch(`/vendors/dashboard/stats/`);
     if (!res.ok) throw new Error('Failed to fetch dashboard stats');
     return res.json();
   },
+
+  updateFCMToken: async (fcmToken: string) => {
+    const res = await authFetch(`/users/fcm-token/`, {
+      method: 'POST',
+      body: JSON.stringify({ fcm_token: fcmToken }),
+    });
+    if (!res.ok) throw new Error('Failed to update FCM token');
+    return res.json();
+  },
 };
+
+

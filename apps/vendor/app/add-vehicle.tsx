@@ -16,8 +16,21 @@ export default function AddVehicleScreen() {
     const [model, setModel] = useState('');
     const [plate, setPlate] = useState('');
     const [rate, setRate] = useState('');
-    const [category, setCategory] = useState('');
+    const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+    const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
     const [image, setImage] = useState<string | null>(null);
+
+    React.useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const data = await VendorApiService.getCategories();
+                setCategories(data);
+            } catch (e) {
+                console.error("Failed to load categories:", e);
+            }
+        };
+        fetchCategories();
+    }, []);
 
     const pickImage = async () => {
         // Request permission
@@ -54,8 +67,8 @@ export default function AddVehicleScreen() {
             formData.append('price_per_hour', rate);
             formData.append('status', 'available');
 
-            if (category) {
-                formData.append('category', category); // If backend expects ID
+            if (selectedCategoryId !== null) {
+                formData.append('category', selectedCategoryId.toString());
             }
 
             if (image) {
@@ -148,25 +161,32 @@ export default function AddVehicleScreen() {
                                 <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Price / Hour (₹)</Text>
                                 <TextInput
                                     className="bg-gray-50 dark:bg-[#1E1E1E] p-4 rounded-xl border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white"
-                                    placeholder="0"
+                                    placeholder="e.g. 50"
                                     keyboardType="numeric"
                                     placeholderTextColor="gray"
                                     value={rate}
                                     onChangeText={setRate}
                                 />
                             </View>
-                            <View className="flex-1">
-                                <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category ID (Optional)</Text>
-                                <TextInput
-                                    className="bg-gray-50 dark:bg-[#1E1E1E] p-4 rounded-xl border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white"
-                                    placeholder="1"
-                                    placeholderTextColor="gray"
-                                    value={category}
-                                    onChangeText={setCategory}
-                                    keyboardType="numeric"
-                                />
+                        </View>
+
+                        <View>
+                            <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Category</Text>
+                            <View className="flex-row flex-wrap gap-2">
+                                {categories.map(cat => (
+                                    <TouchableOpacity
+                                        key={cat.id}
+                                        onPress={() => setSelectedCategoryId(cat.id)}
+                                        className={`px-4 py-2.5 rounded-full border ${selectedCategoryId === cat.id ? 'bg-blue-600 border-blue-600' : 'bg-gray-50 dark:bg-[#1E1E1E] border-gray-200 dark:border-gray-800'}`}
+                                    >
+                                        <Text className={`font-semibold text-sm ${selectedCategoryId === cat.id ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>
+                                            {cat.name}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
                             </View>
                         </View>
+
 
                     </View>
                 </ScrollView>

@@ -110,6 +110,19 @@ class BikeViewSet(viewsets.ModelViewSet):
             queryset = queryset.order_by('-price_per_hour')
         elif sort_by == 'rating':
             queryset = queryset.order_by('-average_rating')
+        elif sort_by == 'distance':
+            lat = self.request.query_params.get('lat')
+            lng = self.request.query_params.get('lng')
+            if lat and lng:
+                lat, lng = float(lat), float(lng)
+                from common.utils import haversine
+                from django.db.models import Case, When
+                bikes_list = list(queryset)
+                bikes_list.sort(key=lambda b: haversine(lat, lng, b.vendor.latitude or 9999, b.vendor.longitude or 9999))
+                ordered_ids = [b.id for b in bikes_list]
+                if ordered_ids:
+                    preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ordered_ids)])
+                    queryset = queryset.filter(id__in=ordered_ids).order_by(preserved)
         elif sort_by == 'newest':
             queryset = queryset.order_by('-created_at')
         else:
@@ -155,3 +168,78 @@ class BikeViewSet(viewsets.ModelViewSet):
             "bike_id": bike.id,
             "status": bike.status
         })
+
+    @action(detail=False, methods=['get'], url_path='recommendations')
+    def recommendations(self, request):
+        """
+        Returns up to 10 bikes scored by a weighted formula:
+        score = 0.35 * (1 / (1 + distance)) + 0.35 * (1 / (1 + price/100)) + 0.30 * (rating/5)
+        """
+        lat = request.query_params.get('lat')
+        lng = request.query_params.get('lng')
+        
+        # Only recommend available bikes
+        bikes = Bike.objects.select_related('vendor', 'category').filter(status='available')
+        
+        results = []
+        for bike in bikes:
+            dist = 9999.0
+            if lat and lng and bike.vendor.latitude and bike.vendor.longitude:
+                from common.utils import haversine
+                dist = haversine(float(lat), float(lng), bike.vendor.latitude, bike.vendor.longitude)
+            
+            # Limit recommendations to 25km if coordinates are provided
+            if lat and lng and dist > 25.0:
+                continue
+                
+            price = float(bike.price_per_hour)
+            rating = float(bike.average_rating) if bike.average_rating else 3.0
+            
+            # Normalization
+            dist_score = 1.0 / (1.0 + dist)
+            price_score = 1.0 / (1.0 + price / 100.0)
+            rating_score = rating / 5.0
+            
+            # Composite Score calculation
+            score = 0.35 * dist_score + 0.35 * price_score + 0.30 * rating_score
+            
+            # Categorize recommended item
+            if dist < 2.0 and rating >= 4.2:
+                tag = 'top_rated_nearby'
+                label = '⭐ Top Rated Nearby'
+            elif price < 80.0 and rating >= 3.8:
+                tag = 'value_pick'
+                label = '💰 Best Value'
+            elif dist < 1.5:
+                tag = 'closest'
+                label = '📍 Closest'
+            elif bike.review_count > 5:
+                tag = 'popular'
+                label = '🔥 Popular'
+            else:
+                tag = 'recommended'
+                label = '✨ Recommended'
+                
+            results.append({
+                'bike': bike,
+                'score': score,
+                'distance_km': None if dist == 9999.0 else round(dist, 1),
+                'tag': tag,
+                'label': label
+            })
+            
+        # Sort recommendations by score descending
+        results.sort(key=lambda x: x['score'], reverse=True)
+        top_recommendations = results[:10]
+        
+        output = []
+        for item in top_recommendations:
+            serializer = BikeSerializer(item['bike'], context={'request': request})
+            data = serializer.data
+            data['recommendation_tag'] = item['tag']
+            data['recommendation_label'] = item['label']
+            if item['distance_km'] is not None:
+                data['distance_km'] = item['distance_km']
+            output.append(data)
+            
+        return Response(output)

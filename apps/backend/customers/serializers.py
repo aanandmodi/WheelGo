@@ -20,7 +20,7 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
 class CreateCustomerProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerProfile
-        fields = ['full_name', 'email', 'avatar', 'saved_address', 'saved_latitude', 'saved_longitude']
+        fields = ['full_name', 'email', 'avatar', 'saved_address', 'saved_latitude', 'saved_longitude', 'is_kyc_verified']
 
 
 class FavoriteSerializer(serializers.ModelSerializer):

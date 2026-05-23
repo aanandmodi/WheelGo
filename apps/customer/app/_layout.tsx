@@ -9,8 +9,9 @@ import 'react-native-reanimated';
 import '../global.css';
 
 import { useColorScheme } from '@/components/useColorScheme';
-import { AuthProvider } from '../context/AuthContext';
+import { AuthProvider, useAuth } from '../context/AuthContext';
 import CustomSplashScreen from '@/components/CustomSplashScreen';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -64,11 +65,21 @@ function RootLayoutNav() {
     <AuthProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <StatusBar style="dark" />
-        <Stack screenOptions={{ animation: 'slide_from_right', animationDuration: 250, headerShown: false }}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        </Stack>
+        <AppContent />
       </ThemeProvider>
     </AuthProvider>
   );
 }
+
+function AppContent() {
+  const { isLoggedIn } = useAuth();
+  useNotifications(isLoggedIn);
+
+  return (
+    <Stack screenOptions={{ animation: 'slide_from_right', animationDuration: 250, headerShown: false }}>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+    </Stack>
+  );
+}
+

@@ -3,11 +3,15 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { authFetch } from '@/constants/ApiService';
+import { useAuth } from '@/context/AuthContext';
 
 export default function InstantKYCScreen() {
+    const { updateUser } = useAuth();
+    const [loading, setLoading] = useState(false);
     const [uploads, setUploads] = useState({
         aadhaar: false,
         license: false,
@@ -25,6 +29,33 @@ export default function InstantKYCScreen() {
         if (!result.canceled) {
             setUploads(prev => ({ ...prev, [type]: true }));
             Alert.alert("Success", `${type.charAt(0).toUpperCase() + type.slice(1)} uploaded successfully!`);
+        }
+    };
+
+    const handleSubmitKYC = async () => {
+        if (!uploads.aadhaar || !uploads.license) {
+            Alert.alert('Missing Documents', 'Please upload both Aadhaar and Driving License.');
+            return;
+        }
+        
+        setLoading(true);
+        try {
+            const response = await authFetch('/customers/profile/', {
+                method: 'POST',
+                body: JSON.stringify({ is_kyc_verified: true }),
+            });
+            
+            if (response.ok) {
+                await updateUser({ is_kyc_verified: true });
+                router.replace('/kyc/success');
+            } else {
+                throw new Error('KYC request failed');
+            }
+        } catch (e) {
+            console.error('KYC error:', e);
+            Alert.alert('Error', 'KYC submission failed. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -90,10 +121,14 @@ export default function InstantKYCScreen() {
                 </ScrollView>
 
                 <Animated.View entering={FadeInDown.delay(600).duration(600)} className="pb-8 pt-4 border-t border-gray-100">
-                    <AnimatedButton
-                        title="Continue to DigiLocker"
-                        onPress={() => router.push('/kyc/digilocker')}
-                    />
+                    {loading ? (
+                        <ActivityIndicator size="large" color="#0F766E" className="py-4" />
+                    ) : (
+                        <AnimatedButton
+                            title="Submit Verification"
+                            onPress={handleSubmitKYC}
+                        />
+                    )}
                     <TouchableOpacity onPress={() => router.replace('/(tabs)')} className="mt-4 items-center">
                         <Text className="text-gray-500 font-medium text-sm">Skip for now</Text>
                     </TouchableOpacity>
@@ -103,3 +138,4 @@ export default function InstantKYCScreen() {
         </SafeAreaView>
     );
 }
+

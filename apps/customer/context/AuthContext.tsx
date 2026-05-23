@@ -9,6 +9,7 @@ interface User {
   role: 'customer' | 'vendor';
   is_active: boolean;
   profile_picture?: string;
+  is_kyc_verified?: boolean;
 }
 
 interface AuthContextType {

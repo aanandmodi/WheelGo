@@ -359,3 +359,10 @@ export const updateFCMToken = async (fcmToken: string) => {
     if (!response.ok) throw new Error('Failed to update FCM token');
     return response.json();
 };
+
+export const getRecommendations = async (lat: number, lng: number) => {
+    const response = await authFetch(`/inventory/bikes/recommendations/?lat=${lat}&lng=${lng}`);
+    if (!response.ok) throw new Error('Failed to fetch recommendations');
+    return response.json();
+};
+

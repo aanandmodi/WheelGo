@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import '../global.css';
 
 import VendorSplashScreen from '@/components/VendorSplashScreen';
-import { AuthProvider } from '@/context/AuthContext';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { useNotifications } from '@/hooks/useNotifications';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -33,10 +34,20 @@ export default function Layout() {
 
     return (
         <AuthProvider>
-            <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="(auth)" />
-            </Stack>
+            <AppContent />
         </AuthProvider>
     );
 }
+
+function AppContent() {
+    const { isLoggedIn } = useAuth();
+    useNotifications(isLoggedIn);
+
+    return (
+        <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="(auth)" />
+        </Stack>
+    );
+}
+

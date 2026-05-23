@@ -6,17 +6,24 @@ import React, { useEffect, useState } from 'react';
 import { Image, ScrollView, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { API_URL } from '@/constants/Api';
+import { useLocation } from '@/hooks/useLocation';
 
 export default function BikeDetailsScreen() {
     const { id } = useLocalSearchParams();
     const [bike, setBike] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const { location, loading: locationLoading } = useLocation();
 
     useEffect(() => {
         const fetchBikeDetails = async () => {
             try {
-                const response = await fetch(`${API_URL}/inventory/bikes/${id}/`);
+                let url = `${API_URL}/inventory/bikes/${id}/`;
+                if (!locationLoading && location) {
+                    url += `?lat=${location.latitude}&lng=${location.longitude}`;
+                }
+                const response = await fetch(url);
                 const data = await response.json();
                 if (response.ok) {
                     setBike(data);
@@ -29,7 +36,7 @@ export default function BikeDetailsScreen() {
         };
 
         if (id) fetchBikeDetails();
-    }, [id]);
+    }, [id, locationLoading, location.latitude, location.longitude]);
 
     if (loading) {
         return (
@@ -121,6 +128,35 @@ export default function BikeDetailsScreen() {
                             <Text className="text-lg font-bold mb-3 text-text-primary">About</Text>
                             <Text className="text-text-secondary leading-6 text-base">{bike.description || 'No description available for this vehicle.'}</Text>
                         </Animated.View>
+
+                        {/* Pickup Location Map */}
+                        {bike.vendor_latitude && bike.vendor_longitude && (
+                            <Animated.View entering={FadeInDown.delay(300).duration(500)} className="mt-6">
+                                <Text className="text-lg font-bold mb-3 text-text-primary">📍 Pickup Location</Text>
+                                <View className="rounded-2xl overflow-hidden border border-border h-48">
+                                    <MapView
+                                        provider={PROVIDER_GOOGLE}
+                                        style={{ flex: 1 }}
+                                        initialRegion={{
+                                            latitude: bike.vendor_latitude,
+                                            longitude: bike.vendor_longitude,
+                                            latitudeDelta: 0.005,
+                                            longitudeDelta: 0.005,
+                                        }}
+                                        scrollEnabled={false}
+                                    >
+                                        <Marker
+                                            coordinate={{ latitude: bike.vendor_latitude, longitude: bike.vendor_longitude }}
+                                            title={bike.vendor_name}
+                                            description={bike.vendor_address}
+                                        />
+                                    </MapView>
+                                </View>
+                                <Text className="text-text-secondary text-sm mt-2 ml-1">
+                                    {bike.vendor_address} {bike.distance_km ? `• ${bike.distance_km} km away` : ''}
+                                </Text>
+                            </Animated.View>
+                        )}
                     </View>
                 </ScrollView>
 
@@ -143,3 +179,4 @@ export default function BikeDetailsScreen() {
         </>
     );
 }
+

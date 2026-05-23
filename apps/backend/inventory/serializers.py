@@ -17,6 +17,7 @@ class BikeSerializer(serializers.ModelSerializer):
     vendor_longitude = serializers.FloatField(source='vendor.longitude', read_only=True)
     category_name = serializers.CharField(source='category.name', read_only=True)
     is_favorited = serializers.SerializerMethodField()
+    distance_km = serializers.SerializerMethodField()
     
     class Meta:
         model = Bike
@@ -24,7 +25,7 @@ class BikeSerializer(serializers.ModelSerializer):
             'id', 'vendor', 'vendor_name', 'vendor_address', 'vendor_latitude', 'vendor_longitude',
             'category', 'category_name', 'brand', 'model', 'number_plate', 'description',
             'price_per_hour', 'condition', 'status', 'image',
-            'average_rating', 'review_count', 'is_favorited', 'created_at'
+            'average_rating', 'review_count', 'is_favorited', 'distance_km', 'created_at'
         ]
         read_only_fields = ['vendor', 'average_rating', 'review_count']
 
@@ -33,6 +34,18 @@ class BikeSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return obj.favorited_by.filter(user=request.user).exists()
         return False
+
+    def get_distance_km(self, obj):
+        request = self.context.get('request')
+        if not request:
+            return None
+        lat = request.query_params.get('lat')
+        lng = request.query_params.get('lng')
+        if lat and lng and obj.vendor.latitude and obj.vendor.longitude:
+            from common.utils import haversine
+            dist = haversine(float(lat), float(lng), obj.vendor.latitude, obj.vendor.longitude)
+            return round(dist, 1)
+        return None
 
 
 class BikeCreateSerializer(serializers.ModelSerializer):

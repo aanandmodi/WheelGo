@@ -1,10 +1,11 @@
 import FilterModal, { FilterOptions } from '@/components/FilterModal';
-import { Feather, MaterialIcons } from '@expo/vector-icons';
+import { Feather, FontAwesome, MaterialIcons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useState, useCallback } from 'react';
-import { FlatList, Image, ScrollView, Text, TextInput, TouchableOpacity, View, ActivityIndicator, RefreshControl } from 'react-native';
+import { FlatList, Image, ScrollView, Text, TextInput, TouchableOpacity, View, ActivityIndicator, RefreshControl, Modal } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
 import { getBikes, addFavorite, removeFavorite, getRecommendations } from '@/constants/ApiService';
 import { useLocation } from '@/hooks/useLocation';
 
@@ -25,9 +26,20 @@ interface Bike {
   distance_km?: number;
 }
 
+const CITIES = [
+  { name: 'Ahmedabad', latitude: 23.0225, longitude: 72.5714 },
+  { name: 'Bangalore', latitude: 12.9716, longitude: 77.5946 },
+  { name: 'Mumbai', latitude: 19.0760, longitude: 72.8777 },
+  { name: 'Delhi', latitude: 28.6139, longitude: 77.2090 },
+  { name: 'Chennai', latitude: 13.0827, longitude: 80.2707 },
+  { name: 'Hyderabad', latitude: 17.3850, longitude: 78.4867 },
+];
+
 export default function HomeScreen() {
   const [search, setSearch] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [cityModalVisible, setCityModalVisible] = useState(false);
+  const [isMapView, setIsMapView] = useState(false);
   const [activeCategory, setActiveCategory] = useState('All');
   const [bikes, setBikes] = useState<Bike[]>([]);
   const [recommendations, setRecommendations] = useState<Bike[]>([]);
@@ -35,7 +47,25 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   
-  const { location, loading: locationLoading, distanceTo } = useLocation();
+  const { location: gpsLocation, loading: locationLoading, distanceTo } = useLocation();
+
+  const [selectedLocation, setSelectedLocation] = useState<any>({
+    latitude: 23.0225,
+    longitude: 72.5714,
+    cityName: 'Ahmedabad',
+    isGps: true
+  });
+
+  React.useEffect(() => {
+    if (!locationLoading && gpsLocation && selectedLocation.isGps) {
+      setSelectedLocation({
+        latitude: gpsLocation.latitude,
+        longitude: gpsLocation.longitude,
+        cityName: gpsLocation.cityName,
+        isGps: true
+      });
+    }
+  }, [gpsLocation, locationLoading]);
 
   const [filters, setFilters] = useState<FilterOptions>({
     sortBy: 'newest',
@@ -51,8 +81,8 @@ export default function HomeScreen() {
       
       const params: any = {
         sort_by: filters.sortBy,
-        lat: location.latitude,
-        lng: location.longitude,
+        lat: selectedLocation.latitude,
+        lng: selectedLocation.longitude,
         radius: filters.radius,
       };
 
@@ -79,7 +109,7 @@ export default function HomeScreen() {
       // Fetch normal bikes and recommendations in parallel
       const [bikesData, recsData] = await Promise.all([
         getBikes(params),
-        getRecommendations(location.latitude, location.longitude).catch(err => {
+        getRecommendations(selectedLocation.latitude, selectedLocation.longitude).catch(err => {
           console.error("Recommendations failed:", err);
           return [];
         }),
@@ -139,7 +169,7 @@ export default function HomeScreen() {
       if (!locationLoading) {
         fetchBikes();
       }
-    }, [activeCategory, filters, locationLoading, location.latitude, location.longitude])
+    }, [activeCategory, filters, locationLoading, selectedLocation.latitude, selectedLocation.longitude])
   );
 
   const handleSearch = () => {
@@ -250,21 +280,21 @@ export default function HomeScreen() {
                 resizeMode="contain"
               />
             </View>
-            <View>
+            <TouchableOpacity onPress={() => setCityModalVisible(true)} activeOpacity={0.7}>
               <Text className="text-text-secondary text-xs font-medium uppercase tracking-wide">Location</Text>
               <View className="flex-row items-center">
                 <Text className="text-text-primary text-base font-bold mr-1">
-                  {locationLoading ? 'Locating...' : location.cityName}
+                  {locationLoading && selectedLocation.isGps ? 'Locating...' : selectedLocation.cityName}
                 </Text>
                 <MaterialIcons name="keyboard-arrow-down" size={20} color="#0F172A" />
               </View>
-            </View>
+            </TouchableOpacity>
           </View>
           <TouchableOpacity onPress={() => router.push('/notifications')} className="h-10 w-10 bg-surface rounded-full items-center justify-center border border-border shadow-sm">
             <Feather name="bell" size={20} color="#0F172A" />
           </TouchableOpacity>
         </View>
-
+ 
         {/* Search Bar */}
         <View className="px-6 py-4 bg-surface z-10">
           <View className="flex-row w-full h-12 bg-gray-50 rounded-xl items-center px-4 border border-border">
@@ -278,6 +308,9 @@ export default function HomeScreen() {
               onSubmitEditing={handleSearch}
               returnKeyType="search"
             />
+            <TouchableOpacity onPress={() => setIsMapView(!isMapView)} className="px-3 border-l border-gray-200">
+              <Feather name={isMapView ? "list" : "map"} size={18} color="#0F172A" />
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => setModalVisible(true)} className="pl-3 border-l border-gray-200">
               <Feather name="sliders" size={18} color="#0F172A" />
             </TouchableOpacity>
@@ -297,6 +330,50 @@ export default function HomeScreen() {
               <ActivityIndicator size="large" color="#008a7c" />
               <Text className="text-gray-500 mt-2">Loading Bikes...</Text>
             </View>
+          ) : isMapView ? (
+            <MapView
+              provider={PROVIDER_GOOGLE}
+              style={{ flex: 1 }}
+              initialRegion={{
+                latitude: selectedLocation.latitude,
+                longitude: selectedLocation.longitude,
+                latitudeDelta: 0.08,
+                longitudeDelta: 0.08,
+              }}
+              region={{
+                latitude: selectedLocation.latitude,
+                longitude: selectedLocation.longitude,
+                latitudeDelta: 0.08,
+                longitudeDelta: 0.08,
+              }}
+            >
+              {bikes
+                .filter(b => b.vendor_latitude && b.vendor_longitude)
+                .map(bike => {
+                  return (
+                    <Marker
+                      key={bike.id}
+                      coordinate={{
+                        latitude: Number(bike.vendor_latitude),
+                        longitude: Number(bike.vendor_longitude),
+                      }}
+                      title={`${bike.brand} ${bike.model}`}
+                      description={`₹${bike.price_per_hour}/hr • Rating: ${bike.average_rating || 'New'}`}
+                    >
+                      <Callout
+                        onPress={() => router.push({ pathname: '/details', params: { id: bike.id } })}
+                        style={{ width: 180, backgroundColor: 'white', padding: 8, borderRadius: 8 }}
+                      >
+                        <View className="items-center">
+                          <Text className="font-bold text-sm text-[#0F172A]">{bike.brand} {bike.model}</Text>
+                          <Text className="text-primary font-bold text-xs mt-1">₹{bike.price_per_hour}/hr</Text>
+                          <Text className="text-gray-400 text-[10px] mt-1">Tap to View Details</Text>
+                        </View>
+                      </Callout>
+                    </Marker>
+                  );
+                })}
+            </MapView>
           ) : (
             <FlatList
               data={bikes}
@@ -388,6 +465,72 @@ export default function HomeScreen() {
           onApply={handleApplyFilters}
           currentFilters={filters}
         />
+
+        {/* City Selection Modal */}
+        <Modal
+          visible={cityModalVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setCityModalVisible(false)}
+        >
+          <View className="flex-1 justify-end bg-black/50">
+            <View className="bg-white dark:bg-[#1E1E1E] p-6 rounded-t-3xl border-t border-gray-100 dark:border-gray-800">
+              <View className="flex-row justify-between items-center mb-6">
+                <Text className="text-xl font-bold text-gray-900 dark:text-white">Select Location</Text>
+                <TouchableOpacity onPress={() => setCityModalVisible(false)} className="h-8 w-8 items-center justify-center bg-gray-100 dark:bg-gray-850 rounded-full">
+                  <MaterialIcons name="close" size={18} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Use GPS option */}
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedLocation({
+                    latitude: gpsLocation?.latitude || 23.0225,
+                    longitude: gpsLocation?.longitude || 72.5714,
+                    cityName: gpsLocation?.cityName || 'Ahmedabad',
+                    isGps: true
+                  });
+                  setCityModalVisible(false);
+                }}
+                className="flex-row items-center p-4 bg-teal-50 dark:bg-teal-900/10 rounded-2xl mb-4 border border-teal-100 dark:border-teal-900/30"
+              >
+                <View className="h-10 w-10 bg-teal-100 dark:bg-teal-900/20 rounded-full items-center justify-center mr-4">
+                  <MaterialIcons name="my-location" size={20} color="#0F766E" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-teal-950 dark:text-teal-200 font-bold text-sm">Current GPS Location</Text>
+                  <Text className="text-teal-700 dark:text-teal-400 text-xs mt-0.5">
+                    {locationLoading ? 'Detecting coordinates...' : gpsLocation?.cityName || 'Use current coordinates'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <Text className="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider mb-3 ml-1">Popular Cities</Text>
+              
+              <ScrollView style={{ maxHeight: 250 }}>
+                {CITIES.map((city) => (
+                  <TouchableOpacity
+                    key={city.name}
+                    onPress={() => {
+                      setSelectedLocation({
+                        latitude: city.latitude,
+                        longitude: city.longitude,
+                        cityName: city.name,
+                        isGps: false
+                      });
+                      setCityModalVisible(false);
+                    }}
+                    className="flex-row items-center py-3.5 px-4 border-b border-gray-100 dark:border-gray-800"
+                  >
+                    <FontAwesome name="map-marker" size={16} color="#94A3B8" />
+                    <Text className="text-gray-900 dark:text-white font-medium ml-3">{city.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
       </View>
     </SafeAreaView>
   );

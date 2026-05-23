@@ -66,6 +66,14 @@ export default function FleetScreen() {
                         </View>
                     </View>
                     <Text className="text-gray-500 text-xs mt-1">Reg: {item.number_plate}</Text>
+                    {item.vendor_address && (
+                        <View className="flex-row items-center mt-1">
+                            <FontAwesome name="map-marker" size={10} color="#9CA3AF" />
+                            <Text className="text-gray-400 text-[10px] ml-1 flex-1" numberOfLines={1}>
+                                {item.vendor_address}
+                            </Text>
+                        </View>
+                    )}
                 </View>
                 <View className="flex-row justify-between items-end">
                     <Text className="text-blue-600 font-bold">₹{item.price_per_hour}/hr</Text>

@@ -7,6 +7,7 @@ import { VendorApiService } from '@/constants/ApiService';
 
 const MENU_ITEMS = [
     { icon: 'bell-o', label: 'Notifications', type: 'toggle', value: true },
+    { icon: 'map-marker', label: 'Shop Location', type: 'link', route: '/shop-location' },
     { icon: 'money', label: 'Earnings', type: 'link', route: '/earnings' },
     { icon: 'bank', label: 'Bank Details', type: 'link', route: '/bank-details' },
     { icon: 'file-text-o', label: 'Terms & Conditions', type: 'link' },

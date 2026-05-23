@@ -16,20 +16,29 @@ export default function DashboardScreen() {
         recent_activity: []
     });
 
+    const [profile, setProfile] = useState<any>(null);
+
     useFocusEffect(
         useCallback(() => {
-            const fetchStats = async () => {
+            const fetchData = async () => {
                 try {
-                    const data = await VendorApiService.getDashboardStats();
-                    setStats(data);
+                    const [statsData, profileData] = await Promise.all([
+                        VendorApiService.getDashboardStats(),
+                        VendorApiService.getProfile().catch(err => {
+                            console.warn("Failed to load profile, showing default", err);
+                            return null;
+                        })
+                    ]);
+                    setStats(statsData);
+                    if (profileData) setProfile(profileData);
                 } catch (error) {
-                    console.error("Failed to fetch dashboard stats", error);
+                    console.error("Failed to fetch dashboard data", error);
                 } finally {
                     setLoading(false);
                 }
             };
 
-            if (token) fetchStats();
+            if (token) fetchData();
         }, [token])
     );
 
@@ -44,10 +53,26 @@ export default function DashboardScreen() {
             <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
                 {/* Header */}
                 <View className="flex-row justify-between items-center mb-6">
-                    <View>
-                        <Text className="text-gray-500 dark:text-gray-400 text-sm">Welcome back,</Text>
-                        <Text className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</Text>
-                    </View>
+                    <TouchableOpacity 
+                        className="flex-row items-center gap-3 flex-1 mr-4"
+                        onPress={() => router.push('/shop-location')}
+                        activeOpacity={0.7}
+                    >
+                        <View className="h-10 w-10 bg-blue-100 dark:bg-blue-900/20 rounded-full items-center justify-center">
+                            <FontAwesome name="map-marker" size={20} color="#2563EB" />
+                        </View>
+                        <View className="flex-1">
+                            <Text className="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider">Shop Location</Text>
+                            <Text className="text-base font-bold text-gray-900 dark:text-white" numberOfLines={1}>
+                                {profile ? profile.shop_name : 'Loading Shop...'}
+                            </Text>
+                            {profile && (
+                                <Text className="text-gray-400 text-xs" numberOfLines={1}>
+                                    {profile.address || 'Set shop address'}
+                                </Text>
+                            )}
+                        </View>
+                    </TouchableOpacity>
                     <TouchableOpacity className="h-10 w-10 bg-white dark:bg-[#1E1E1E] items-center justify-center rounded-full shadow-sm">
                         <FontAwesome name="bell-o" size={20} color="#6B7280" />
                         <View className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full" />

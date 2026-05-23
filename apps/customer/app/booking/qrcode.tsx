@@ -28,7 +28,7 @@ export default function QRCodeScreen() {
 
         try {
             setLoading(true);
-            const data = await getBookingQRCode(parseInt(bookingId));
+            const data = await getBookingQRCode(bookingId);
             setQrData(data);
             setError(null);
         } catch (err: any) {

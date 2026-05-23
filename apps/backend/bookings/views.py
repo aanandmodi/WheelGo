@@ -76,10 +76,7 @@ class BookingViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='accept')
     def accept_booking(self, request, pk=None):
-        """
-        Vendor accepts a pending booking request.
-        Requires payment to be completed first in a real flow.
-        """
+        """Vendor accepts a pending booking request."""
         booking = self.get_object()
         
         # Verify vendor owns this bike
@@ -92,28 +89,34 @@ class BookingViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # In production, check payment status before confirming
-        # For now, accept directly (payment can be pending for demo)
-        booking.status = 'confirmed'
-        booking.save()
+        from django.db import transaction
+        from common.notifications import notify_booking_confirmed
         
-        # Notify customer
-        self._send_customer_notification(
-            booking, 
-            'booking_confirmed',
-            'Booking Confirmed!',
-            f'Your booking for {booking.bike.brand} {booking.bike.model} has been confirmed by the vendor.'
-        )
+        with transaction.atomic():
+            booking.status = 'confirmed'
+            booking.save()
+            
+            # Update Bike Status to reserved
+            bike = booking.bike
+            bike.status = 'reserved'
+            bike.save()
+            
+            # Notify customer via DB log
+            self._send_customer_notification(
+                booking, 
+                'booking_confirmed',
+                'Booking Confirmed! 🎉',
+                f'Your booking for {booking.bike.brand} {booking.bike.model} is confirmed. Show QR at pickup.'
+            )
+            
+            # Send Firebase Push
+            notify_booking_confirmed(booking)
         
-        return Response({
-            "message": "Booking accepted successfully",
-            "booking_id": booking.id,
-            "status": booking.status
-        })
+        return Response(BookingSerializer(booking).data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='reject')
     def reject_booking(self, request, pk=None):
-        """Vendor rejects a pending booking request with a reason."""
+        """Vendor rejects a pending booking request with a reason and refunds customer if paid."""
         booking = self.get_object()
         
         if not self._check_vendor_owns_booking(request, booking):
@@ -125,32 +128,75 @@ class BookingViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        reason = request.data.get('reason', 'No reason provided')
-        booking.status = 'cancelled'
-        booking.rejection_reason = reason
-        booking.save()
+        reason = request.data.get('reason', 'Vendor unavailable')
         
-        # Notify customer
-        self._send_customer_notification(
-            booking,
-            'booking_rejected',
-            'Booking Rejected',
-            f'Your booking for {booking.bike.brand} {booking.bike.model} was rejected. Reason: {reason}'
-        )
+        from django.db import transaction
+        from common.notifications import notify_booking_rejected
         
-        # TODO: Trigger refund if payment was made
+        with transaction.atomic():
+            booking.status = 'cancelled'
+            booking.rejection_reason = reason
+            booking.save()
+            
+            # Update Bike Status back to available
+            bike = booking.bike
+            bike.status = 'available'
+            bike.save()
+            
+            # Trigger Razorpay refund if payment was success
+            if booking.payment_status == 'paid':
+                try:
+                    from payments.services import RazorpayClient
+                    payments = booking.payments.filter(status='success')
+                    for payment in payments:
+                        client = RazorpayClient()
+                        
+                        # Use razorpay_payment_id if present, otherwise fallback to API search or transaction_id
+                        refund_payment_id = payment.razorpay_payment_id
+                        if not refund_payment_id:
+                            try:
+                                # Fetch payments associated with the order/transaction ID
+                                order_payments = client.client.order.payments(payment.transaction_id)
+                                if order_payments and order_payments.get('items'):
+                                    refund_payment_id = order_payments['items'][0]['id']
+                                    # Save retrieved payment ID to DB
+                                    payment.razorpay_payment_id = refund_payment_id
+                                    payment.save()
+                            except Exception as lookup_err:
+                                import logging
+                                logger = logging.getLogger(__name__)
+                                logger.error(f"Failed to lookup payments for order {payment.transaction_id}: {lookup_err}")
+                        
+                        # Fallback to transaction_id if lookup failed or in simulator testing
+                        if not refund_payment_id:
+                            refund_payment_id = payment.transaction_id
+                            
+                        client.refund_payment(refund_payment_id, float(payment.amount))
+                        payment.status = 'failed'
+                        payment.save()
+                    booking.payment_status = 'failed'
+                    booking.save()
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Refund failed for booking {booking.id}: {e}")
+            
+            # Notify customer via DB log
+            self._send_customer_notification(
+                booking,
+                'booking_rejected',
+                'Booking Rejected ❌',
+                f'Your booking for {booking.bike.brand} {booking.bike.model} was rejected. Reason: {reason}'
+            )
+            
+            # Send Firebase Push
+            notify_booking_rejected(booking)
         
-        return Response({
-            "message": "Booking rejected",
-            "booking_id": booking.id,
-            "reason": reason
-        })
+        return Response({"message": "Booking rejected", "status": booking.status}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='complete')
     def complete_ride(self, request, pk=None):
-        """
-        End an active ride and create earning record for vendor.
-        """
+        """End an active ride and create earning record for vendor."""
         booking = self.get_object()
         
         if not self._check_vendor_owns_booking(request, booking):
@@ -162,35 +208,56 @@ class BookingViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        booking.status = 'completed'
-        booking.actual_end_time = timezone.now()
-        booking.save()
-        
-        # Create earning record for vendor
+        from django.db import transaction
+        from decimal import Decimal
         from vendors.models import Earning
-        Earning.objects.create(
-            vendor=booking.bike.vendor,
-            booking=booking,
-            gross_amount=booking.total_amount
-        )
+        from common.notifications import notify_ride_completed
         
-        # Notify customer
-        self._send_customer_notification(
-            booking,
-            'ride_completed',
-            'Ride Completed!',
-            f'Your ride on {booking.bike.brand} {booking.bike.model} has been completed. Leave a review!'
-        )
+        with transaction.atomic():
+            booking.status = 'completed'
+            booking.actual_end_time = timezone.now()
+            booking.save()
+            
+            # Update Bike Status to available
+            bike = booking.bike
+            bike.status = 'available'
+            bike.save()
+            
+            # Create earning record for vendor (15% commission)
+            gross_amount = booking.total_amount
+            platform_fee = gross_amount * Decimal('0.15')
+            net_amount = gross_amount - platform_fee
+            
+            Earning.objects.create(
+                vendor=booking.bike.vendor,
+                booking=booking,
+                gross_amount=gross_amount,
+                platform_fee=platform_fee,
+                net_amount=net_amount,
+                status='pending'
+            )
+            
+            # Notify customer via DB log
+            self._send_customer_notification(
+                booking,
+                'ride_completed',
+                'Ride Completed! ⭐',
+                f'How was your {booking.bike.brand} {booking.bike.model} ride? Leave a review!'
+            )
+            
+            # Send Firebase Push
+            notify_ride_completed(booking)
         
         return Response({
             "message": "Ride completed successfully",
             "booking_id": booking.id,
-            "completed_at": booking.actual_end_time
-        })
+            "completed_at": booking.actual_end_time,
+            "earning": float(net_amount)
+        }, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='cancel')
     def cancel_booking(self, request, pk=None):
-        """Customer or Vendor cancels a booking before ride starts."""
+        """Customer or Vendor cancels a booking before ride starts, refunds customer if paid."""
         booking = self.get_object()
         user = request.user
         
@@ -208,17 +275,72 @@ class BookingViewSet(viewsets.ModelViewSet):
             )
         
         reason = request.data.get('reason', 'Cancelled by user')
-        booking.status = 'cancelled'
-        booking.rejection_reason = reason
-        booking.save()
         
-        # TODO: Trigger refund if payment was made
+        from django.db import transaction
+        from common.notifications import notify_booking_rejected
+        
+        with transaction.atomic():
+            booking.status = 'cancelled'
+            booking.rejection_reason = reason
+            booking.save()
+            
+            # Update Bike Status back to available
+            bike = booking.bike
+            bike.status = 'available'
+            bike.save()
+            
+            # Trigger Razorpay refund if payment was success
+            if booking.payment_status == 'paid':
+                try:
+                    from payments.services import RazorpayClient
+                    payments = booking.payments.filter(status='success')
+                    for payment in payments:
+                        client = RazorpayClient()
+                        
+                        # Use razorpay_payment_id if present, otherwise fallback to API search or transaction_id
+                        refund_payment_id = payment.razorpay_payment_id
+                        if not refund_payment_id:
+                            try:
+                                order_payments = client.client.order.payments(payment.transaction_id)
+                                if order_payments and order_payments.get('items'):
+                                    refund_payment_id = order_payments['items'][0]['id']
+                                    payment.razorpay_payment_id = refund_payment_id
+                                    payment.save()
+                            except Exception as lookup_err:
+                                import logging
+                                logger = logging.getLogger(__name__)
+                                logger.error(f"Failed to lookup payments for order {payment.transaction_id}: {lookup_err}")
+                        
+                        if not refund_payment_id:
+                            refund_payment_id = payment.transaction_id
+                        
+                        client.refund_payment(refund_payment_id, float(payment.amount))
+                        payment.status = 'failed'
+                        payment.save()
+                    booking.payment_status = 'failed'
+                    booking.save()
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Refund failed for booking {booking.id}: {e}")
+            
+            # Notify customer via DB log
+            self._send_customer_notification(
+                booking,
+                'booking_rejected',
+                'Booking Cancelled',
+                f'Booking for {booking.bike.brand} {booking.bike.model} was cancelled. Reason: {reason}'
+            )
+            
+            # Send Firebase Push to customer if vendor cancelled
+            if is_vendor:
+                notify_booking_rejected(booking)
         
         return Response({
             "message": "Booking cancelled",
             "booking_id": booking.id,
             "reason": reason
-        })
+        }, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], url_path='scan-qr')
     def scan_qr(self, request):
@@ -228,7 +350,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             return Response({"error": "QR code data required"}, status=status.HTTP_400_BAD_REQUEST)
             
         try:
-            booking = Booking.objects.get(qr_code_data=qr_data)
+            booking = Booking.objects.select_related('user', 'bike', 'bike__vendor', 'bike__vendor__user').get(qr_code_data=qr_data)
         except Booking.DoesNotExist:
             return Response({"error": "Invalid QR Code"}, status=status.HTTP_404_NOT_FOUND)
         
@@ -241,24 +363,34 @@ class BookingViewSet(viewsets.ModelViewSet):
                 {"error": f"Booking is not ready to start (Status: {booking.status})"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-             
-        booking.status = 'active'
-        booking.save()
         
-        # Notify customer
-        self._send_customer_notification(
-            booking,
-            'ride_started',
-            'Ride Started!',
-            f'Your ride on {booking.bike.brand} {booking.bike.model} has started. Ride safe!'
-        )
+        from django.db import transaction
+        
+        with transaction.atomic():
+            booking.status = 'active'
+            booking.save()
+            
+            # Update Bike Status to active
+            bike = booking.bike
+            bike.status = 'active'
+            bike.save()
+            
+            # Notify customer via DB log
+            self._send_customer_notification(
+                booking,
+                'ride_started',
+                'Ride Started! 🏍️',
+                f'Your ride on {booking.bike.brand} {booking.bike.model} has started. Ride safe!'
+            )
         
         return Response({
-            "message": "Ride Started Successfully!",
+            "message": "Ride started!",
             "booking_id": booking.id,
-            "bike": f"{booking.bike.brand} {booking.bike.model}",
-            "customer_phone": booking.user.phone_number
-        })
+            "customer_name": booking.user.full_name or booking.user.phone_number,
+            "bike_name": f"{booking.bike.brand} {booking.bike.model}",
+            "start_time": timezone.now(),
+            "end_time": booking.end_time,
+        }, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['get'], url_path='qr-code')
     def get_qr_code(self, request, pk=None):
@@ -280,4 +412,4 @@ class BookingViewSet(viewsets.ModelViewSet):
             "qr_code_image": request.build_absolute_uri(booking.qr_code_image.url) if booking.qr_code_image else None,
             "booking_id": booking.id,
             "status": booking.status
-        })
+        }, status=status.HTTP_200_OK)

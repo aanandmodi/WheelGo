@@ -21,26 +21,26 @@ export default function Button({
     className = ''
 }: ButtonProps) {
 
-    const baseStyle = "rounded-2xl flex-row justify-center items-center shadow-sm";
+    const baseStyle = "rounded-3xl flex-row justify-center items-center shadow-sm active:opacity-90";
 
     const variants = {
-        primary: "bg-primary border border-transparent",
-        secondary: "bg-secondary border border-secondary",
-        outline: "bg-transparent border border-gray-300",
+        primary: "bg-primary border border-transparent shadow-md shadow-primary/20",
+        secondary: "bg-secondary border border-transparent shadow-md shadow-secondary/15",
+        outline: "bg-transparent border-2 border-gray-200 dark:border-gray-800",
         ghost: "bg-transparent border-0 shadow-none",
     };
 
     const sizes = {
-        sm: "py-2 px-4",
-        md: "py-3 px-6",
-        lg: "py-4 px-8",
+        sm: "py-2.5 px-5",
+        md: "py-3.5 px-6",
+        lg: "py-4.5 px-8",
     };
 
     const textVariants = {
-        primary: "text-white font-bold",
-        secondary: "text-black font-bold",
-        outline: "text-gray-700 font-medium",
-        ghost: "text-primary font-medium",
+        primary: "text-white font-bold tracking-wide",
+        secondary: "text-white font-bold tracking-wide",
+        outline: "text-gray-700 dark:text-gray-300 font-bold",
+        ghost: "text-primary font-bold",
     };
 
     return (
@@ -52,7 +52,7 @@ export default function Button({
             {isLoading ? (
                 <ActivityIndicator color={variant === 'outline' ? 'gray' : 'white'} />
             ) : (
-                <Text className={`${textVariants[variant]} text-center text-lg`}>{title}</Text>
+                <Text className={`${textVariants[variant]} text-center text-base`}>{title}</Text>
             )}
         </TouchableOpacity>
     );

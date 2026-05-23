@@ -23,8 +23,8 @@ export default function GradientButton({
 
     // Default gradients
     const gradients: Record<string, [string, string]> = {
-        primary: ['#2563EB', '#4F46E5'], // Royal Blue -> Indigo
-        secondary: ['#F59E0B', '#F97316'], // Amber -> Orange
+        primary: ['#FF7A00', '#EA580C'], // Vibrant Orange
+        secondary: ['#1E293B', '#0F172A'], // Deep Navy / Slate
     };
 
     const activeGradient = colors || gradients[variant];
@@ -34,19 +34,19 @@ export default function GradientButton({
             onPress={onPress}
             activeOpacity={0.8}
             disabled={isLoading || props.disabled}
-            className={`rounded-2xl shadow-xl ${props.disabled ? 'opacity-50' : ''} ${className}`}
+            className={`rounded-3xl shadow-lg shadow-orange-500/20 ${props.disabled ? 'opacity-50' : ''} ${className}`}
             {...props}
         >
             <LinearGradient
                 colors={activeGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                className="py-4 px-8 rounded-2xl items-center justify-center"
+                className="py-4 px-8 rounded-3xl items-center justify-center"
             >
                 {isLoading ? (
                     <ActivityIndicator color="white" />
                 ) : (
-                    <Text className="text-white font-bold text-lg tracking-wide">{title}</Text>
+                    <Text className="text-white font-bold text-base tracking-wider uppercase">{title}</Text>
                 )}
             </LinearGradient>
         </TouchableOpacity>

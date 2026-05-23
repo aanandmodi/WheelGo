@@ -30,7 +30,7 @@ export default function FeedbackScreen() {
 
         try {
             setSubmitting(true);
-            await submitReview(parseInt(bookingId), rating, comment);
+            await submitReview({ bookingId: Number(bookingId), rating, comment });
             Alert.alert(
                 'Thank You!',
                 'Your review has been submitted successfully.',

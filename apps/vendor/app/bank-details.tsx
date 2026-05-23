@@ -3,7 +3,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { SafeAreaView, Text, TextInput, TouchableOpacity, View, ActivityIndicator, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
-import { API_URL } from '@/constants/Api';
+import { VendorApiService } from '@/constants/ApiService';
 
 interface BankDetails {
     id?: number;
@@ -31,14 +31,9 @@ export default function BankDetailsScreen() {
         useCallback(() => {
             const fetchBankDetails = async () => {
                 try {
-                    const response = await fetch(`${API_URL}/vendors/bank-details/`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    if (response.ok) {
-                        const data = await response.json();
-                        setForm(data);
-                        setHasExisting(true);
-                    }
+                    const data = await VendorApiService.getBankDetails();
+                    setForm(data);
+                    setHasExisting(true);
                 } catch (error) {
                     // No existing bank details
                 } finally {
@@ -64,26 +59,13 @@ export default function BankDetailsScreen() {
 
         setSaving(true);
         try {
-            const response = await fetch(`${API_URL}/vendors/bank-details/`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(form)
-            });
-            const data = await response.json();
-
-            if (response.ok) {
-                Alert.alert('Success', 'Bank details saved successfully', [
-                    { text: 'OK', onPress: () => router.back() }
-                ]);
-            } else {
-                Alert.alert('Error', data.ifsc_code?.[0] || data.error || 'Failed to save');
-            }
-        } catch (error) {
+            await VendorApiService.saveBankDetails(form);
+            Alert.alert('Success', 'Bank details saved successfully', [
+                { text: 'OK', onPress: () => router.back() }
+            ]);
+        } catch (error: any) {
             console.error('Failed to save bank details', error);
-            Alert.alert('Error', 'Network error. Please try again.');
+            Alert.alert('Error', error.message || 'Failed to save bank details');
         } finally {
             setSaving(false);
         }

@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from datetime import timedelta
 from bookings.models import Booking
@@ -31,7 +31,7 @@ class VendorDashboardStatsView(APIView):
         # Earnings from new Earning model
         earnings_data = vendor.earnings.aggregate(
             total_net=Sum('net_amount'),
-            pending_amount=Sum('net_amount', filter=Count('status') == 'pending')
+            pending_amount=Sum('net_amount', filter=Q(status='pending'))
         )
         total_earnings = earnings_data['total_net'] or 0
         

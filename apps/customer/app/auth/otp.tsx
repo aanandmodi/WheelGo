@@ -5,8 +5,20 @@ import { KeyboardAvoidingView, Platform, SafeAreaView, Text, TextInput, Touchabl
 
 import { useAuth } from '@/context/AuthContext';
 import { API_URL } from '@/constants/Api';
-import { storeTokens } from '@/constants/ApiService';
+import * as Notifications from 'expo-notifications';
+import { updateFCMToken } from '@/constants/ApiService';
 
+const registerFCMToken = async () => {
+    try {
+        const { status } = await Notifications.requestPermissionsAsync();
+        if (status === 'granted') {
+            const token = (await Notifications.getExpoPushTokenAsync()).data;
+            await updateFCMToken(token);
+        }
+    } catch (err) {
+        console.warn("FCM token registration skipped:", err);
+    }
+};
 export default function OTPScreen() {
     const { login } = useAuth();
     const { phone } = useLocalSearchParams();
@@ -35,10 +47,8 @@ export default function OTPScreen() {
 
             const data = await response.json();
             if (response.ok) {
-                // Store tokens for authenticated API calls
-                await storeTokens(data.access, data.refresh);
-
-                login('consumer', data.access, data.refresh);
+                await login(data.access, data.refresh, data.user);
+                await registerFCMToken();
                 if (data.new_user) {
                     router.replace('/kyc/instant');
                 } else {

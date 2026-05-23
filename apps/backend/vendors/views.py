@@ -31,6 +31,9 @@ class VendorProfileView(APIView):
         if serializer.is_valid():
             if not hasattr(request.user, 'vendor_profile'):
                 serializer.save(user=request.user)
+                # Update user role to 'vendor'
+                request.user.role = 'vendor'
+                request.user.save(update_fields=['role'])
             else:
                 serializer.save()
             

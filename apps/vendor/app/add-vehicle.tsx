@@ -2,7 +2,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View, ActivityIndicator, Alert, Image, Platform } from 'react-native';
-import { API_URL } from '@/constants/Api';
+import { VendorApiService } from '@/constants/ApiService';
 import { useAuth } from '@/context/AuthContext';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -67,29 +67,15 @@ export default function AddVehicleScreen() {
                 formData.append('photo', { uri: image, name: filename, type });
             }
 
-            const response = await fetch(`${API_URL}/inventory/bikes/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: formData as any
-            });
+            await VendorApiService.addVehicle(formData);
 
-            const data = await response.json();
+            Alert.alert("Success", "Vehicle Added Successfully!", [
+                { text: "OK", onPress: () => router.back() }
+            ]);
 
-            if (response.ok) {
-                Alert.alert("Success", "Vehicle Added Successfully!", [
-                    { text: "OK", onPress: () => router.back() }
-                ]);
-            } else {
-                console.error("Backend Error:", data);
-                Alert.alert("Error", "Failed to add vehicle. See logs.");
-            }
-
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            Alert.alert("Error", "Network Request Failed");
+            Alert.alert("Error", error.message || "Failed to add vehicle.");
         } finally {
             setLoading(false);
         }

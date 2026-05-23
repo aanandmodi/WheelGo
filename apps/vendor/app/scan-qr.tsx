@@ -4,13 +4,14 @@ import { router } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView, Text, View, TouchableOpacity, Alert, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
-import { API_URL } from '@/constants/Api';
+import { VendorApiService } from '@/constants/ApiService';
 
 export default function ScanQRScreen() {
     const { token } = useAuth();
     const [hasPermission, setHasPermission] = useState<boolean | null>(null);
     const [scanned, setScanned] = useState(false);
     const [processing, setProcessing] = useState(false);
+    const [bookingDetails, setBookingDetails] = useState<any>(null);
 
     useEffect(() => {
         requestCameraPermission();
@@ -29,52 +30,12 @@ export default function ScanQRScreen() {
 
         try {
             // Call backend to validate and start the ride
-            const response = await fetch(`${API_URL}/bookings/scan-qr/`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ qr_data: data }),
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                Alert.alert(
-                    '✅ Ride Started!',
-                    result.message || 'The ride has been started successfully.',
-                    [
-                        {
-                            text: 'OK',
-                            onPress: () => router.replace('/(tabs)/bookings'),
-                        },
-                    ]
-                );
-            } else {
-                Alert.alert(
-                    'Error',
-                    result.error || 'Failed to start ride. Please try again.',
-                    [
-                        {
-                            text: 'Try Again',
-                            onPress: () => {
-                                setScanned(false);
-                                setProcessing(false);
-                            },
-                        },
-                        {
-                            text: 'Cancel',
-                            onPress: () => router.back(),
-                            style: 'cancel',
-                        },
-                    ]
-                );
-            }
-        } catch (error) {
+            const result = await VendorApiService.scanQR(data);
+            setBookingDetails(result);
+        } catch (error: any) {
             Alert.alert(
-                'Network Error',
-                'Failed to connect to server. Please check your connection.',
+                'Error',
+                error.message || 'Failed to start ride. Please try again.',
                 [
                     {
                         text: 'Try Again',
@@ -82,6 +43,11 @@ export default function ScanQRScreen() {
                             setScanned(false);
                             setProcessing(false);
                         },
+                    },
+                    {
+                        text: 'Cancel',
+                        onPress: () => router.back(),
+                        style: 'cancel',
                     },
                 ]
             );
@@ -119,6 +85,44 @@ export default function ScanQRScreen() {
                 >
                     <Text className="text-gray-400">Go Back</Text>
                 </TouchableOpacity>
+            </SafeAreaView>
+        );
+    }
+
+    if (bookingDetails) {
+        return (
+            <SafeAreaView className="flex-1 bg-[#0F172A] justify-center px-6">
+                <View className="bg-[#1E293B] border border-slate-700/50 p-6 rounded-3xl items-center shadow-2xl">
+                    <View className="h-20 w-20 bg-emerald-500/10 rounded-full items-center justify-center mb-6">
+                        <MaterialIcons name="check-circle" size={54} color="#10B981" />
+                    </View>
+                    <Text className="text-emerald-400 font-bold text-xl mb-1 text-center font-Outfit">Ride Started Successfully</Text>
+                    <Text className="text-slate-400 text-sm text-center mb-6">Booking #{bookingDetails.booking_id}</Text>
+
+                    <View className="w-full mb-8 bg-slate-800/40 p-4 rounded-2xl border border-slate-700/30">
+                        <View className="flex-row justify-between py-2 border-b border-slate-700/20">
+                            <Text className="text-slate-400 text-sm">Customer</Text>
+                            <Text className="text-white font-semibold text-sm">{bookingDetails.customer_name}</Text>
+                        </View>
+                        <View className="flex-row justify-between py-2 border-b border-slate-700/20">
+                            <Text className="text-slate-400 text-sm">Vehicle</Text>
+                            <Text className="text-white font-semibold text-sm">{bookingDetails.bike_name}</Text>
+                        </View>
+                        <View className="flex-row justify-between py-2">
+                            <Text className="text-slate-400 text-sm">Drop-off Time</Text>
+                            <Text className="text-white font-semibold text-sm">
+                                {new Date(bookingDetails.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </Text>
+                        </View>
+                    </View>
+
+                    <TouchableOpacity
+                        className="w-full bg-[#EA580C] py-4 rounded-xl shadow-lg shadow-[#EA580C]/20 items-center"
+                        onPress={() => router.replace('/(tabs)/bookings')}
+                    >
+                        <Text className="text-white font-bold text-base">Go to Bookings</Text>
+                    </TouchableOpacity>
+                </View>
             </SafeAreaView>
         );
     }

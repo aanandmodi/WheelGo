@@ -13,11 +13,19 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny]
 
 
+from rest_framework.pagination import PageNumberPagination
+
+class BikePagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
 class BikeViewSet(viewsets.ModelViewSet):
     queryset = Bike.objects.all()
     serializer_class = BikeSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     parser_classes = (MultiPartParser, FormParser)
+    pagination_class = BikePagination
     
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -113,7 +121,8 @@ class BikeViewSet(viewsets.ModelViewSet):
         if hasattr(self.request.user, 'vendor_profile'):
             serializer.save(vendor=self.request.user.vendor_profile)
         else:
-            pass
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Only vendors can add bikes. Create a vendor profile first.")
 
     @action(detail=True, methods=['post'], url_path='toggle-availability')
     def toggle_availability(self, request, pk=None):

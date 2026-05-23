@@ -3,7 +3,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { FlatList, SafeAreaView, ScrollView, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
-import { API_URL } from '@/constants/Api';
+import { VendorApiService } from '@/constants/ApiService';
 
 export default function DashboardScreen() {
     const router = useRouter();
@@ -20,15 +20,8 @@ export default function DashboardScreen() {
         useCallback(() => {
             const fetchStats = async () => {
                 try {
-                    const response = await fetch(`${API_URL}/vendors/dashboard/stats/`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-                    const data = await response.json();
-                    if (response.ok) {
-                        setStats(data);
-                    }
+                    const data = await VendorApiService.getDashboardStats();
+                    setStats(data);
                 } catch (error) {
                     console.error("Failed to fetch dashboard stats", error);
                 } finally {

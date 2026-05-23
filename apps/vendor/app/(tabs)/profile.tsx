@@ -3,7 +3,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { Image, SafeAreaView, ScrollView, Switch, Text, TouchableOpacity, View, Alert } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
-import { API_URL } from '@/constants/Api';
+import { VendorApiService } from '@/constants/ApiService';
 
 const MENU_ITEMS = [
     { icon: 'bell-o', label: 'Notifications', type: 'toggle', value: true },
@@ -23,13 +23,8 @@ export default function ProfileScreen() {
         useCallback(() => {
             const fetchProfile = async () => {
                 try {
-                    const response = await fetch(`${API_URL}/vendors/profile/`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    const data = await response.json();
-                    if (response.ok) {
-                        setProfile(data);
-                    }
+                    const data = await VendorApiService.getProfile();
+                    setProfile(data);
                 } catch (error) {
                     console.error("Failed to fetch profile", error);
                 }

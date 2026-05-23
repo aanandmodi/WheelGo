@@ -3,7 +3,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { FlatList, Image, SafeAreaView, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
-import { API_URL } from '@/constants/Api';
+import { VendorApiService } from '@/constants/ApiService';
 
 export default function FleetScreen() {
     const router = useRouter();
@@ -16,20 +16,11 @@ export default function FleetScreen() {
         useCallback(() => {
             const fetchBikes = async () => {
                 try {
-                    const response = await fetch(`${API_URL}/inventory/bikes/`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    const data = await response.json();
-                    if (response.ok) {
-                        if (Array.isArray(data)) {
-                            setBikes(data);
-                        } else {
-                            console.warn('Fleet API returned non-array:', data);
-                            setBikes([]);
-                        }
-                    }
+                    const data = await VendorApiService.getFleet();
+                    setBikes(Array.isArray(data) ? data : []);
                 } catch (error) {
                     console.error('Failed to fetch bikes', error);
+                    setBikes([]);
                 } finally {
                     setLoading(false);
                 }
@@ -43,21 +34,14 @@ export default function FleetScreen() {
 
     const handleToggleAvailability = async (bikeId: number) => {
         try {
-            const response = await fetch(`${API_URL}/inventory/bikes/${bikeId}/toggle-availability/`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
-            if (response.ok) {
-                // Update local state
-                setBikes(prev => prev.map((b: any) =>
-                    b.id === bikeId ? { ...b, status: data.status } : b
-                ));
-            } else {
-                alert(data.error || 'Failed to toggle');
-            }
-        } catch (error) {
+            const data = await VendorApiService.toggleBikeAvailability(bikeId.toString());
+            // Update local state
+            setBikes(prev => prev.map((b: any) =>
+                b.id === bikeId ? { ...b, status: data.status } : b
+            ));
+        } catch (error: any) {
             console.error('Toggle failed', error);
+            alert(error.message || 'Failed to toggle availability');
         }
     };
 

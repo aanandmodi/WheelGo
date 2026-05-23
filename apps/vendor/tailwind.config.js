@@ -4,14 +4,14 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: "#2563EB", // Royal Blue
-          light: "#60A5FA",
-          dark: "#1E3A8A",
+          DEFAULT: "#EA580C", // Orange 600
+          light: "#FB923C",   // Orange 400
+          dark: "#C2410C",    // Orange 700
         },
         secondary: {
-          DEFAULT: "#F59E0B", // Amber
-          light: "#FCD34D",
-          dark: "#B45309",
+          DEFAULT: "#0F172A", // Slate 900 / Deep Navy
+          light: "#1E293B",   // Slate 800
+          dark: "#020617",    // Slate 950
         },
         background: "#F8FAFC",
         surface: "#FFFFFF",

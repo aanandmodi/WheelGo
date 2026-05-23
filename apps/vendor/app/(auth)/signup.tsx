@@ -10,6 +10,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { API_URL } from '@/constants/Api';
 
 export default function SignupScreen() {
     const [formData, setFormData] = useState({
@@ -38,7 +39,7 @@ export default function SignupScreen() {
         setLoading(true);
         try {
             // 1. Check if user ALREADY exists
-            const checkResponse = await fetch(`${require('../../constants/Api').API_URL}/users/check-user/`, {
+            const checkResponse = await fetch(`${API_URL}/users/check-user/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone_number: formData.phone })
@@ -53,7 +54,7 @@ export default function SignupScreen() {
             }
 
             // 2. Send OTP
-            const response = await fetch(`${require('../../constants/Api').API_URL}/users/send-otp/`, {
+            const response = await fetch(`${API_URL}/users/send-otp/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone_number: formData.phone })

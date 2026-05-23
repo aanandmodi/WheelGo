@@ -4,7 +4,8 @@ import { router, useFocusEffect } from 'expo-router';
 import React, { useState, useCallback } from 'react';
 import { Image, ScrollView, Text, TouchableOpacity, View, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getCustomerProfile, clearAuthData } from '@/constants/ApiService';
+import { getCustomerProfile } from '@/constants/ApiService';
+import { useAuth } from '@/context/AuthContext';
 
 interface Profile {
     id: number;
@@ -16,6 +17,7 @@ interface Profile {
 }
 
 export default function AccountScreen() {
+    const { logout } = useAuth();
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -40,7 +42,7 @@ export default function AccountScreen() {
     );
 
     const handleLogout = async () => {
-        await clearAuthData();
+        await logout();
         router.replace('/auth/login');
     };
 

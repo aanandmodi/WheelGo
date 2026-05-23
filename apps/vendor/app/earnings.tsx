@@ -3,7 +3,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { FlatList, SafeAreaView, Text, TouchableOpacity, View, ActivityIndicator, RefreshControl } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
-import { API_URL } from '@/constants/Api';
+import { VendorApiService } from '@/constants/ApiService';
 
 interface Earning {
     id: number;
@@ -36,21 +36,12 @@ export default function EarningsScreen() {
     const fetchData = async () => {
         try {
             // Fetch summary
-            const summaryRes = await fetch(`${API_URL}/vendors/earnings/summary/`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (summaryRes.ok) {
-                setSummary(await summaryRes.json());
-            }
+            const summaryData = await VendorApiService.getEarningsSummary();
+            setSummary(summaryData);
 
             // Fetch earnings list
-            const listRes = await fetch(`${API_URL}/vendors/earnings/`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (listRes.ok) {
-                const data = await listRes.json();
-                setEarnings(Array.isArray(data) ? data : []);
-            }
+            const listData = await VendorApiService.getEarnings();
+            setEarnings(Array.isArray(listData) ? listData : []);
         } catch (error) {
             console.error('Failed to fetch earnings', error);
         } finally {

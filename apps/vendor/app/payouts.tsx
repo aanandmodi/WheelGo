@@ -3,7 +3,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { FlatList, SafeAreaView, Text, TextInput, TouchableOpacity, View, ActivityIndicator, Alert } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
-import { API_URL } from '@/constants/Api';
+import { VendorApiService } from '@/constants/ApiService';
 
 interface Payout {
     id: number;
@@ -26,22 +26,12 @@ export default function PayoutsScreen() {
     const fetchData = async () => {
         try {
             // Fetch available balance
-            const summaryRes = await fetch(`${API_URL}/vendors/earnings/summary/`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (summaryRes.ok) {
-                const data = await summaryRes.json();
-                setAvailableBalance(data.available_balance || 0);
-            }
+            const summaryData = await VendorApiService.getEarningsSummary();
+            setAvailableBalance(summaryData.available_balance || 0);
 
             // Fetch payouts list
-            const listRes = await fetch(`${API_URL}/vendors/payouts/`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (listRes.ok) {
-                const data = await listRes.json();
-                setPayouts(Array.isArray(data) ? data : []);
-            }
+            const listData = await VendorApiService.getPayouts();
+            setPayouts(Array.isArray(listData) ? listData : []);
         } catch (error) {
             console.error('Failed to fetch payouts', error);
         } finally {
@@ -68,26 +58,13 @@ export default function PayoutsScreen() {
 
         setRequesting(true);
         try {
-            const response = await fetch(`${API_URL}/vendors/payouts/request/`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ amount: amountNum })
-            });
-            const data = await response.json();
-
-            if (response.ok) {
-                Alert.alert('Success', data.message || 'Payout requested!');
-                setAmount('');
-                fetchData(); // Refresh
-            } else {
-                Alert.alert('Error', data.error || data.amount?.[0] || 'Failed to request payout');
-            }
-        } catch (error) {
+            const data = await VendorApiService.requestPayout(amountNum);
+            Alert.alert('Success', data.message || 'Payout requested!');
+            setAmount('');
+            fetchData(); // Refresh
+        } catch (error: any) {
             console.error('Failed to request payout', error);
-            Alert.alert('Error', 'Network error. Please try again.');
+            Alert.alert('Error', error.message || 'Failed to request payout');
         } finally {
             setRequesting(false);
         }

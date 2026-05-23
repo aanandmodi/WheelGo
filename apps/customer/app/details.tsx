@@ -47,7 +47,7 @@ export default function BikeDetailsScreen() {
         );
     }
 
-    const imageUrl = bike.photo || 'https://via.placeholder.com/300';
+    const imageUrl = bike.image ? bike.image : 'https://via.placeholder.com/300';
 
     return (
         <>
@@ -77,7 +77,7 @@ export default function BikeDetailsScreen() {
                                         </View>
                                         <View className="flex-row items-center">
                                             <FontAwesome name="star" size={12} color="#F59E0B" />
-                                            <Text className="ml-1 text-text-secondary font-bold text-xs">{bike.rating || 'New'} ({bike.reviews || 0})</Text>
+                                            <Text className="ml-1 text-text-secondary font-bold text-xs">{bike.average_rating || 'New'} ({bike.review_count || 0})</Text>
                                         </View>
                                     </View>
                                     <Text className="text-2xl font-bold text-text-primary leading-tight">{bike.brand} {bike.model}</Text>

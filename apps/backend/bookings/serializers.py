@@ -11,9 +11,15 @@ class BookingCreateSerializer(serializers.ModelSerializer):
         fields = ['bike', 'start_time', 'end_time']
 
     def validate(self, data):
+        user = self.context['request'].user
         bike = data['bike']
         start_time = data['start_time']
         end_time = data['end_time']
+
+        if user == bike.vendor.user:
+            raise serializers.ValidationError("You cannot book your own bike.")
+        if hasattr(user, 'role') and user.role != 'customer':
+            raise serializers.ValidationError("Only customers can create bookings.")
 
         if start_time >= end_time:
             raise serializers.ValidationError("End time must be after start time")
@@ -36,23 +42,39 @@ class BookingCreateSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
+        from django.db import transaction
         from customers.views import create_customer_notification
         
-        bike = validated_data['bike']
+        bike_obj = validated_data['bike']
         start_time = validated_data['start_time']
         end_time = validated_data['end_time']
         
-        # Calculate total amount
-        duration = end_time - start_time
-        hours = duration.total_seconds() / 3600
-        total_amount = float(bike.price_per_hour) * hours
+        with transaction.atomic():
+            # Lock the bike row in DB to serialize booking creation on the same bike
+            bike = Bike.objects.select_for_update().get(id=bike_obj.id)
+            
+            # Check overlap INSIDE the database lock
+            overlapping = Booking.objects.filter(
+                bike=bike,
+                status__in=['pending', 'confirmed', 'active'],
+                start_time__lt=end_time,
+                end_time__gt=start_time,
+            ).exists()
+            
+            if overlapping:
+                raise serializers.ValidationError("Bike is not available for this time slot.")
+                
+            # Calculate total amount
+            duration = end_time - start_time
+            hours = duration.total_seconds() / 3600
+            total_amount = float(bike.price_per_hour) * hours
+            
+            validated_data['total_amount'] = total_amount
+            validated_data['user'] = self.context['request'].user
+            
+            booking = super().create(validated_data)
         
-        validated_data['total_amount'] = total_amount
-        validated_data['user'] = self.context['request'].user
-        
-        booking = super().create(validated_data)
-        
-        # Create customer notification
+        # Create customer notification (outside the transaction lock to prevent holding lock during external calls)
         try:
             create_customer_notification(
                 user=booking.user,

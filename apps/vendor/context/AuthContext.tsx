@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     React.useEffect(() => {
         const loadToken = async () => {
             try {
-                const storedToken = await SecureStore.getItemAsync('userToken');
+                const storedToken = await SecureStore.getItemAsync('access_token');
                 const storedRole = await SecureStore.getItemAsync('userRole');
                 if (storedToken) {
                     setToken(storedToken);
@@ -49,13 +49,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         loadToken();
     }, []);
 
-    const login = (role: UserRole = 'consumer', accessToken?: string, refreshToken?: string) => {
+    const login = (role: UserRole = 'vendor', accessToken?: string, refreshToken?: string) => {
         setIsLoggedIn(true);
         setUserRole(role);
         if (accessToken) {
             setToken(accessToken);
-            SecureStore.setItemAsync('userToken', accessToken);
-            SecureStore.setItemAsync('userRole', role || 'consumer');
+            SecureStore.setItemAsync('access_token', accessToken);
+            if (refreshToken) {
+                SecureStore.setItemAsync('refresh_token', refreshToken);
+            }
+            SecureStore.setItemAsync('userRole', role || 'vendor');
             console.log("Logged in with token:", accessToken);
         }
     };
@@ -64,7 +67,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsLoggedIn(false);
         setUserRole(null);
         setToken(null);
-        await SecureStore.deleteItemAsync('userToken');
+        await SecureStore.deleteItemAsync('access_token');
+        await SecureStore.deleteItemAsync('refresh_token');
         await SecureStore.deleteItemAsync('userRole');
         router.replace('/(auth)/login');
     };

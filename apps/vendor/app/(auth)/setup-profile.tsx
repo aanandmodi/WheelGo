@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View, ActivityIndicator, Alert } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
-import { API_URL } from '@/constants/Api';
+import { VendorApiService } from '@/constants/ApiService';
 
 export default function SetupProfileScreen() {
     const router = useRouter();
@@ -12,7 +12,6 @@ export default function SetupProfileScreen() {
 
     const [shopName, setShopName] = useState('');
     const [address, setAddress] = useState('');
-    // const [ownerName, setOwnerName] = useState(''); // If we want to update User.full_name separately
 
     const handleSaveProfile = async () => {
         if (!shopName || !address) {
@@ -23,34 +22,20 @@ export default function SetupProfileScreen() {
         setLoading(true);
         try {
             console.log("Creating profile with token:", token);
-            const response = await fetch(`${API_URL}/vendors/profile/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    shop_name: shopName,
-                    address: address,
-                    // mock lat/lng
-                    latitude: 12.9716,
-                    longitude: 77.5946
-                })
+            await VendorApiService.saveProfile({
+                shop_name: shopName,
+                address: address,
+                latitude: 12.9716,
+                longitude: 77.5946
             });
 
-            const data = await response.json();
-
-            if (response.ok) {
-                // Profile Created
-                Alert.alert("Success", "Profile Created Successfully!", [
-                    { text: "Go to Dashboard", onPress: () => router.replace('/(tabs)') }
-                ]);
-            } else {
-                Alert.alert("Error", JSON.stringify(data));
-            }
-        } catch (error) {
+            // Profile Created
+            Alert.alert("Success", "Profile Created Successfully!", [
+                { text: "Go to Dashboard", onPress: () => router.replace('/(tabs)') }
+            ]);
+        } catch (error: any) {
             console.error(error);
-            Alert.alert("Error", "Network Request Failed");
+            Alert.alert("Error", error.message || "Failed to create profile.");
         } finally {
             setLoading(false);
         }

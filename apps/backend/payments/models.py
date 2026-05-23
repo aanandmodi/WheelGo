@@ -12,6 +12,7 @@ class Payment(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     provider = models.CharField(max_length=50, default='Razorpay')
     transaction_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    razorpay_payment_id = models.CharField(max_length=100, null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     timestamp = models.DateTimeField(auto_now_add=True)
 

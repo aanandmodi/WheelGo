@@ -1,3 +1,4 @@
+import os
 from django.db import models
 from django.conf import settings
 from inventory.models import Bike
@@ -43,13 +44,32 @@ class Booking(models.Model):
         if not self.qr_code_data:
             self.qr_code_data = str(uuid.uuid4()) # Unique Token
         
-        # Generate QR Image only if not exists (and is confirmed ideally, but doing here for simplicity)
+        # Generate QR Image only if not exists and status is confirmed or active
         if not self.qr_code_image and self.status in ['confirmed', 'active']:
             qr_image = qrcode.make(self.qr_code_data)
             canvas = BytesIO()
             qr_image.save(canvas, format='PNG')
             file_name = f'qr_{self.qr_code_data}.png'
-            self.qr_code_image.save(file_name, File(canvas), save=False)
+            
+            # If Cloudinary details are configured in environment, upload directly
+            if not settings.DEBUG and os.environ.get('CLOUDINARY_CLOUD_NAME'):
+                import cloudinary.uploader
+                canvas.seek(0)
+                try:
+                    result = cloudinary.uploader.upload(
+                        canvas,
+                        folder='wheelgo/qr_codes',
+                        public_id=f'booking_{self.id or "temp"}',
+                        format='png'
+                    )
+                    self.qr_code_image = result['secure_url']
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Cloudinary upload failed: {e}")
+                    self.qr_code_image.save(file_name, File(canvas), save=False)
+            else:
+                self.qr_code_image.save(file_name, File(canvas), save=False)
             
         super().save(*args, **kwargs)
 

@@ -17,10 +17,13 @@ import * as Google from 'expo-auth-session/providers/google';
 import * as SecureStore from 'expo-secure-store';
 import { API_URL } from '@/constants/Api';
 
+import { useAuth } from '@/context/AuthContext';
+
 // Complete any pending auth sessions
 WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
+    const { login } = useAuth();
     const [phone, setPhone] = useState('');
     const [loading, setLoading] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
@@ -67,10 +70,10 @@ export default function LoginScreen() {
 
             if (backendResponse.ok) {
                 const data = await backendResponse.json();
-                // Save tokens securely
-                await SecureStore.setItemAsync('access_token', data.access);
-                await SecureStore.setItemAsync('refresh_token', data.refresh);
-                await SecureStore.setItemAsync('user', JSON.stringify(data.user));
+                
+                // Call AuthContext login to save tokens and update state
+                login('vendor', data.access, data.refresh);
+                await SecureStore.setItemAsync('user_data', JSON.stringify(data.user));
 
                 if (data.has_vendor_profile) {
                     router.replace('/(tabs)');

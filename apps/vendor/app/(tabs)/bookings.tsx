@@ -2,7 +2,7 @@ import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
 import React, { useCallback, useState } from 'react';
 import { FlatList, Image, SafeAreaView, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
-import { API_URL } from '@/constants/Api';
+import { VendorApiService } from '@/constants/ApiService';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 export default function BookingRequestsScreen() {
@@ -16,25 +16,17 @@ export default function BookingRequestsScreen() {
         useCallback(() => {
             const fetchBookings = async () => {
                 try {
-                    const response = await fetch(`${API_URL}/bookings/`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    // Log status to debug
-                    console.log('Bookings Status:', response.status);
-                    const data = await response.json();
-
-                    if (response.ok) {
-                        if (Array.isArray(data)) {
-                            setRequests(data);
-                        } else {
-                            console.error('Bookings API returned non-array:', data);
-                            setRequests([]); // Fallback
-                        }
+                    const data = await VendorApiService.getVendorBookings();
+                    if (Array.isArray(data)) {
+                        setRequests(data);
+                    } else if (data && Array.isArray(data.results)) {
+                        setRequests(data.results);
                     } else {
-                        console.error('Bookings API Error:', data);
+                        setRequests([]);
                     }
                 } catch (error) {
                     console.error('Failed to fetch bookings', error);
+                    setRequests([]);
                 } finally {
                     setLoading(false);
                 }
@@ -53,33 +45,21 @@ export default function BookingRequestsScreen() {
 
     const handleAction = async (id: number, action: 'accept' | 'reject') => {
         try {
-            const endpoint = action === 'accept'
-                ? `${API_URL}/bookings/${id}/accept/`
-                : `${API_URL}/bookings/${id}/reject/`;
-
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: action === 'reject' ? JSON.stringify({ reason: 'Rejected by vendor' }) : undefined
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                // Update local state to reflect change
-                setRequests(prev => prev.map((r: any) =>
-                    r.id === id ? { ...r, status: action === 'accept' ? 'confirmed' : 'cancelled' } : r
-                ));
-                alert(data.message || `Booking ${action}ed!`);
+            let data;
+            if (action === 'accept') {
+                data = await VendorApiService.acceptBooking(id.toString());
             } else {
-                alert(data.error || `Failed to ${action} booking`);
+                data = await VendorApiService.rejectBooking(id.toString(), 'Rejected by vendor');
             }
-        } catch (error) {
+
+            // Update local state to reflect change
+            setRequests(prev => prev.map((r: any) =>
+                r.id === id ? { ...r, status: action === 'accept' ? 'confirmed' : 'cancelled' } : r
+            ));
+            alert(data.message || `Booking ${action}ed!`);
+        } catch (error: any) {
             console.error(`Failed to ${action} booking`, error);
-            alert(`Network error. Please try again.`);
+            alert(error.message || `Failed to ${action} booking`);
         }
     };
 

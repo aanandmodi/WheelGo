@@ -52,3 +52,14 @@ firebase-service-account.json
 .env
 apps/backend/.env
 
+# Python
+**/venv/
+venv/
+**/*.pyc
+**/__pycache__/
+*.pyc
+__pycache__/
+
+# Django Media
+**/media/
+apps/backend/media/

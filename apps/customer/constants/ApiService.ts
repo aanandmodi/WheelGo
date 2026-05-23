@@ -1,51 +1,50 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { API_URL } from './Api';
 
-// Token storage keys
-const ACCESS_TOKEN_KEY = 'accessToken';
-const REFRESH_TOKEN_KEY = 'refreshToken';
-const USER_DATA_KEY = 'userData';
+// Token storage keys matching AuthContext
+const ACCESS_TOKEN_KEY = 'access_token';
+const REFRESH_TOKEN_KEY = 'refresh_token';
+const USER_DATA_KEY = 'user_data';
 
 // Store tokens
 export const storeTokens = async (accessToken: string, refreshToken: string) => {
-    await AsyncStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-    await AsyncStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken);
+    await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken);
 };
 
 // Get access token
 export const getAccessToken = async (): Promise<string | null> => {
-    return await AsyncStorage.getItem(ACCESS_TOKEN_KEY);
+    return await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
 };
 
 // Get refresh token
 export const getRefreshToken = async (): Promise<string | null> => {
-    return await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
+    return await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
 };
 
 // Store user data
 export const storeUserData = async (userData: any) => {
-    await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+    await SecureStore.setItemAsync(USER_DATA_KEY, JSON.stringify(userData));
 };
 
 // Get user data
 export const getUserData = async (): Promise<any | null> => {
-    const data = await AsyncStorage.getItem(USER_DATA_KEY);
+    const data = await SecureStore.getItemAsync(USER_DATA_KEY);
     return data ? JSON.parse(data) : null;
 };
 
 // Clear all auth data
 export const clearAuthData = async () => {
-    await AsyncStorage.multiRemove([ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, USER_DATA_KEY]);
+    await Promise.all([
+        SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY),
+        SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY),
+        SecureStore.deleteItemAsync(USER_DATA_KEY),
+    ]);
 };
 
-// Authenticated fetch wrapper
+// Authenticated fetch wrapper with 401 token refresh
 export const authFetch = async (endpoint: string, options: RequestInit = {}): Promise<Response> => {
     const token = await getAccessToken();
-
-    // Debug: log token status
-    if (!token) {
-        console.warn('No access token found - user may need to log in');
-    }
 
     const headers = {
         'Content-Type': 'application/json',
@@ -58,11 +57,44 @@ export const authFetch = async (endpoint: string, options: RequestInit = {}): Pr
         headers,
     });
 
-    // Handle 401 - token expired or invalid
+    // Handle 401 - token expired or invalid, attempt refresh
     if (response.status === 401) {
-        console.warn('Authentication failed - token may be expired or invalid');
-        // Clear the invalid token
-        await clearAuthData();
+        console.warn('Authentication failed - attempting token refresh');
+        const refreshToken = await getRefreshToken();
+        
+        if (!refreshToken) {
+            await clearAuthData();
+            throw new Error('Session expired');
+        }
+
+        try {
+            const refreshResponse = await fetch(`${API_URL}/users/token/refresh/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refresh: refreshToken }),
+            });
+
+            if (!refreshResponse.ok) {
+                await clearAuthData();
+                throw new Error('Session expired. Please login again.');
+            }
+
+            const { access } = await refreshResponse.json();
+            await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, access);
+
+            // Retry original request with the new access token
+            return fetch(`${API_URL}${endpoint}`, {
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${access}`,
+                    ...options.headers,
+                },
+            });
+        } catch (err) {
+            await clearAuthData();
+            throw new Error('Session expired. Please login again.');
+        }
     }
 
     return response;
@@ -84,6 +116,7 @@ export const updateCustomerProfile = async (profileData: {
     saved_address?: string;
     saved_latitude?: number;
     saved_longitude?: number;
+    is_kyc_verified?: boolean;
 }) => {
     const response = await authFetch('/customers/profile/', {
         method: 'POST',
@@ -97,6 +130,18 @@ export const updateCustomerProfile = async (profileData: {
 export const getFavorites = async () => {
     const response = await authFetch('/customers/favorites/');
     if (!response.ok) throw new Error('Failed to fetch favorites');
+    return response.json();
+};
+
+export const toggleFavorite = async (bikeId: number) => {
+    const response = await authFetch('/customers/favorites/', {
+        method: 'POST',
+        body: JSON.stringify({ bike_id: bikeId }),
+    });
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to toggle favorite');
+    }
     return response.json();
 };
 
@@ -116,15 +161,25 @@ export const removeFavorite = async (bikeId: number) => {
     const response = await authFetch(`/customers/favorites/${bikeId}/`, {
         method: 'DELETE',
     });
-    if (!response.ok) throw new Error('Failed to remove favorite');
-    return response.json();
+    if (!response.ok) {
+        throw new Error('Failed to remove favorite');
+    }
+    return { success: true };
 };
 
 // ==================== REVIEWS ====================
-export const submitReview = async (bookingId: number, rating: number, comment: string = '') => {
+export const submitReview = async (reviewData: {
+    bookingId: number;
+    rating: number;
+    comment?: string;
+}) => {
     const response = await authFetch('/customers/reviews/', {
         method: 'POST',
-        body: JSON.stringify({ booking: bookingId, rating, comment }),
+        body: JSON.stringify({
+            booking: reviewData.bookingId,
+            rating: reviewData.rating,
+            comment: reviewData.comment || '',
+        }),
     });
     if (!response.ok) {
         const error = await response.json();
@@ -170,7 +225,7 @@ export const getCustomerDashboard = async () => {
 };
 
 // ==================== BOOKINGS ====================
-export const getBookings = async (filter?: 'upcoming' | 'active' | 'past') => {
+export const getBookings = async (filter?: string) => {
     let endpoint = '/bookings/';
     if (filter) {
         endpoint += `?filter=${filter}`;
@@ -180,7 +235,7 @@ export const getBookings = async (filter?: 'upcoming' | 'active' | 'past') => {
     return response.json();
 };
 
-export const getBookingDetails = async (bookingId: number) => {
+export const getBookingDetails = async (bookingId: string) => {
     const response = await authFetch(`/bookings/${bookingId}/`);
     if (!response.ok) throw new Error('Failed to fetch booking details');
     return response.json();
@@ -210,7 +265,7 @@ export const cancelBooking = async (bookingId: number, reason: string = 'Cancell
     return response.json();
 };
 
-export const getBookingQRCode = async (bookingId: number) => {
+export const getBookingQRCode = async (bookingId: string) => {
     const response = await authFetch(`/bookings/${bookingId}/qr-code/`);
     if (!response.ok) throw new Error('Failed to get QR code');
     return response.json();
@@ -228,6 +283,7 @@ export const getBikes = async (params?: {
     lat?: number;
     lng?: number;
     radius?: number;
+    limit?: number;
 }) => {
     let endpoint = '/inventory/bikes/';
     if (params) {
@@ -247,7 +303,7 @@ export const getBikes = async (params?: {
     return Array.isArray(data) ? data : data.results || [];
 };
 
-export const getBikeDetails = async (bikeId: number) => {
+export const getBikeDetails = async (bikeId: string) => {
     const response = await authFetch(`/inventory/bikes/${bikeId}/`);
     if (!response.ok) throw new Error('Failed to fetch bike details');
     return response.json();
@@ -256,5 +312,50 @@ export const getBikeDetails = async (bikeId: number) => {
 export const getCategories = async () => {
     const response = await authFetch('/inventory/categories/');
     if (!response.ok) throw new Error('Failed to fetch categories');
+    return response.json();
+};
+
+// ==================== PAYMENTS ====================
+export const createOrder = async (bookingId: number) => {
+    const response = await authFetch('/payments/create-order/', {
+        method: 'POST',
+        body: JSON.stringify({ booking_id: bookingId }),
+    });
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create payment order');
+    }
+    return response.json();
+};
+
+export const verifyPayment = async (paymentDetails: {
+    bookingId: number;
+    orderId: string;
+    paymentId: string;
+    signature: string;
+}) => {
+    const response = await authFetch('/payments/verify-payment/', {
+        method: 'POST',
+        body: JSON.stringify({
+            booking_id: paymentDetails.bookingId,
+            razorpay_order_id: paymentDetails.orderId,
+            razorpay_payment_id: paymentDetails.paymentId,
+            razorpay_signature: paymentDetails.signature,
+        }),
+    });
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to verify payment');
+    }
+    return response.json();
+};
+
+// ==================== NOTIFICATIONS / FCM ====================
+export const updateFCMToken = async (fcmToken: string) => {
+    const response = await authFetch('/users/fcm-token/', {
+        method: 'POST',
+        body: JSON.stringify({ fcm_token: fcmToken }),
+    });
+    if (!response.ok) throw new Error('Failed to update FCM token');
     return response.json();
 };

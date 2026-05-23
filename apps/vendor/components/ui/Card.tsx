@@ -8,13 +8,13 @@ interface CardProps extends ViewProps {
 
 export default function Card({ children, variant = 'elevated', className, ...props }: CardProps) {
     const variants = {
-        elevated: "bg-white shadow-md border-0",
-        outlined: "bg-white border border-gray-200 shadow-none",
-        flat: "bg-gray-50 border-0 shadow-none"
+        elevated: "bg-white dark:bg-[#1E293B] shadow-lg shadow-slate-100 dark:shadow-none border border-gray-100/50 dark:border-slate-800",
+        outlined: "bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-slate-800 shadow-none",
+        flat: "bg-gray-50 dark:bg-slate-800/40 border border-transparent shadow-none"
     };
 
     return (
-        <View className={`rounded-2xl p-4 ${variants[variant]} ${className}`} {...props}>
+        <View className={`rounded-3xl p-5 ${variants[variant]} ${className}`} {...props}>
             {children}
         </View>
     );

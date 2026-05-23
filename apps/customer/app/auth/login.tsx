@@ -66,13 +66,8 @@ export default function LoginScreen() {
 
             if (backendResponse.ok) {
                 const data = await backendResponse.json();
-                // Save tokens and user data
-                await AsyncStorage.setItem('access_token', data.access);
-                await AsyncStorage.setItem('refresh_token', data.refresh);
-                await AsyncStorage.setItem('user', JSON.stringify(data.user));
-
-                // Update auth context
-                login(data.access, data.user);
+                // Update auth context using secure storage
+                await login(data.access, data.refresh, data.user);
 
                 if (data.new_user) {
                     // New user - go to profile setup

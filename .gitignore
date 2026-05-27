@@ -51,6 +51,12 @@ firebase-service-account.json
 # Environment files
 .env
 apps/backend/.env
+apps/customer/.env
+apps/vendor/.env
+
+# SQLite databases
+db.sqlite3
+*.sqlite3
 
 # Python
 **/venv/
@@ -63,3 +69,4 @@ __pycache__/
 # Django Media
 **/media/
 apps/backend/media/
+

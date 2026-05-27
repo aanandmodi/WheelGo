@@ -11,7 +11,7 @@ const TRANSACTIONS = [
 
 export default function WalletScreen() {
 
-    const renderItem = ({ item }) => (
+    const renderItem = ({ item }: { item: typeof TRANSACTIONS[0] }) => (
         <View className="flex-row justify-between items-center py-4 border-b border-gray-100">
             <View className="flex-row items-center gap-3">
                 <View className={`h-10 w-10 rounded-full items-center justify-center ${item.type === 'credit' ? 'bg-green-100' : 'bg-red-100'}`}>

@@ -196,9 +196,12 @@ class KYCCheckStatusView(APIView):
         result = client.check_status(txn_id)
         
         if result['status'] == 'verified':
-            vendor = request.user.vendor_profile
-            vendor.is_verified = True
-            vendor.save()
+            if hasattr(request.user, 'vendor_profile'):
+                vendor = request.user.vendor_profile
+                vendor.is_verified = True
+                vendor.save()
+            else:
+                return Response({"error": "Vendor profile not found"}, status=status.HTTP_400_BAD_REQUEST)
             
         return Response(result)
 

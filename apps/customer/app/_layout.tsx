@@ -1,7 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, router, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
@@ -72,8 +72,25 @@ function RootLayoutNav() {
 }
 
 function AppContent() {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isLoading } = useAuth();
+  const segments = useSegments();
+
   useNotifications(isLoggedIn);
+
+  useEffect(() => {
+    if (!isLoading) {
+      const inAuthGroup = segments[0] === 'auth';
+      if (!isLoggedIn && !inAuthGroup) {
+        router.replace('/auth/login');
+      } else if (isLoggedIn && inAuthGroup) {
+        router.replace('/(tabs)');
+      }
+    }
+  }, [isLoggedIn, isLoading, segments]);
+
+  if (isLoading) {
+    return <CustomSplashScreen />;
+  }
 
   return (
     <Stack screenOptions={{ animation: 'slide_from_right', animationDuration: 250, headerShown: false }}>

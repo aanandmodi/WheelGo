@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { SafeAreaView, ScrollView, Text, View, ActivityIndicator, Alert } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
 import { getBikeDetails, createBooking, createOrder, verifyPayment } from '@/constants/ApiService';
+// @ts-ignore
 import RazorpayCheckout from 'react-native-razorpay';
 
 export default function BookingScreen() {

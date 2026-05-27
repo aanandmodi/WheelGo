@@ -69,18 +69,18 @@ export default function OTPScreen() {
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-white dark:bg-[#121212]">
+        <SafeAreaView className="flex-1 bg-background">
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                className="flex-1 px-4 justify-center"
+                className="flex-1 px-6 justify-center"
             >
                 <View>
                     <TouchableOpacity onPress={() => router.back()} className="h-12 w-12 items-center justify-center -ml-2 mb-4">
-                        <MaterialIcons name="arrow-back" size={24} color="#3B82F6" />
+                        <MaterialIcons name="arrow-back" size={24} color="#0F1115" />
                     </TouchableOpacity>
 
-                    <Text className="text-3xl font-bold text-center mb-2 text-gray-900 dark:text-white">Verify Account</Text>
-                    <Text className="text-base text-center text-gray-500 dark:text-gray-400 mb-8">
+                    <Text className="text-3xl font-bold text-center mb-2 text-gray-900">Verify Account</Text>
+                    <Text className="text-base text-center text-gray-500 mb-8">
                         Enter the code sent to {phone}
                     </Text>
 
@@ -94,7 +94,7 @@ export default function OTPScreen() {
                                 onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}
                                 keyboardType="number-pad"
                                 maxLength={1}
-                                className="w-12 h-14 border border-gray-300 dark:border-gray-700 rounded-xl text-center text-xl font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-[#1E1E1E]"
+                                className="w-12 h-14 border border-gray-200 rounded-2xl text-center text-xl font-medium text-gray-900 bg-white"
                                 selectTextOnFocus
                                 editable={!loading}
                             />
@@ -103,13 +103,13 @@ export default function OTPScreen() {
 
                     <TouchableOpacity
                         onPress={() => handleVerify(otp.join(''))}
-                        className={`h-14 bg-blue-600 rounded-xl justify-center items-center shadow-lg shadow-blue-500/30 ${loading ? 'opacity-70' : ''}`}
+                        className={`h-14 bg-primary rounded-full justify-center items-center shadow-lg shadow-gray-900/10 ${loading ? 'opacity-70' : ''}`}
                         disabled={loading}
                     >
                         {loading ? (
                             <ActivityIndicator color="white" />
                         ) : (
-                            <Text className="text-white text-lg font-bold">Verify & Login</Text>
+                            <Text className="text-white text-base font-bold">Verify & Login</Text>
                         )}
                     </TouchableOpacity>
                 </View>

@@ -4,21 +4,24 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: "#EA580C", // Orange 600
-          light: "#FB923C",   // Orange 400
-          dark: "#C2410C",    // Orange 700
+          DEFAULT: "#0F1115", // Carbon Black
+          light: "#1F2937",   // Charcoal
+          dark: "#000000",    // Jet Black
+          foreground: "#FFFFFF",
         },
         secondary: {
-          DEFAULT: "#0F172A", // Slate 900 / Deep Navy
-          light: "#1E293B",   // Slate 800
-          dark: "#020617",    // Slate 950
+          DEFAULT: "#FFC72C", // Taxi Gold
+          light: "#FFE382",   // Soft Gold
+          dark: "#CA9900",    // Deep Gold
         },
         background: "#F8FAFC",
         surface: "#FFFFFF",
         text: {
-          primary: "#1E293B",
-          secondary: "#64748B",
-        }
+          primary: "#0F1115",
+          secondary: "#4B5563",
+          muted: "#9CA3AF",
+        },
+        border: "#E5E7EB",
       },
       borderRadius: {
         'xl': '12px',

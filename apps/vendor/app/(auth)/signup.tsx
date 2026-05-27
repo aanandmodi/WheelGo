@@ -79,7 +79,7 @@ export default function SignupScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-white dark:bg-[#121212]">
+        <SafeAreaView className="flex-1 bg-background">
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 className="flex-1"
@@ -89,19 +89,19 @@ export default function SignupScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     <View className="items-center mb-8">
-                        <Text className="text-3xl font-bold text-gray-900 dark:text-white">
+                        <Text className="text-3xl font-bold text-gray-900">
                             Create Account
                         </Text>
-                        <Text className="text-gray-500 mt-2 text-center dark:text-gray-400">
+                        <Text className="text-gray-500 mt-2 text-center">
                             Join the WheelGo partner network
                         </Text>
                     </View>
 
                     <View className="space-y-4">
                         <View>
-                            <Text className="text-gray-700 dark:text-gray-300 mb-2 font-medium">Business Name</Text>
+                            <Text className="text-gray-700 mb-2 font-medium">Business Name</Text>
                             <TextInput
-                                className="w-full bg-gray-50 dark:bg-[#1E1E1E] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-gray-900 dark:text-white"
+                                className="w-full bg-white border border-gray-250 rounded-xl px-4 py-3 text-gray-900"
                                 placeholder="e.g. Royal Riders"
                                 placeholderTextColor="#9CA3AF"
                                 value={formData.businessName}
@@ -110,9 +110,9 @@ export default function SignupScreen() {
                         </View>
 
                         <View>
-                            <Text className="text-gray-700 dark:text-gray-300 mb-2 font-medium">Owner Name</Text>
+                            <Text className="text-gray-700 mb-2 font-medium">Owner Name</Text>
                             <TextInput
-                                className="w-full bg-gray-50 dark:bg-[#1E1E1E] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-gray-900 dark:text-white"
+                                className="w-full bg-white border border-gray-250 rounded-xl px-4 py-3 text-gray-900"
                                 placeholder="John Doe"
                                 placeholderTextColor="#9CA3AF"
                                 value={formData.ownerName}
@@ -121,9 +121,9 @@ export default function SignupScreen() {
                         </View>
 
                         <View>
-                            <Text className="text-gray-700 dark:text-gray-300 mb-2 font-medium">Email Address</Text>
+                            <Text className="text-gray-700 mb-2 font-medium">Email Address</Text>
                             <TextInput
-                                className="w-full bg-gray-50 dark:bg-[#1E1E1E] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-gray-900 dark:text-white"
+                                className="w-full bg-white border border-gray-250 rounded-xl px-4 py-3 text-gray-900"
                                 placeholder="vendor@wheelgo.com"
                                 placeholderTextColor="#9CA3AF"
                                 keyboardType="email-address"
@@ -134,9 +134,9 @@ export default function SignupScreen() {
                         </View>
 
                         <View>
-                            <Text className="text-gray-700 dark:text-gray-300 mb-2 font-medium">Phone Number</Text>
+                            <Text className="text-gray-700 mb-2 font-medium">Phone Number</Text>
                             <TextInput
-                                className="w-full bg-gray-50 dark:bg-[#1E1E1E] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-gray-900 dark:text-white"
+                                className="w-full bg-white border border-gray-250 rounded-xl px-4 py-3 text-gray-900"
                                 placeholder="+91 98765 43210"
                                 placeholderTextColor="#9CA3AF"
                                 keyboardType="phone-pad"
@@ -146,9 +146,9 @@ export default function SignupScreen() {
                         </View>
 
                         <View>
-                            <Text className="text-gray-700 dark:text-gray-300 mb-2 font-medium">Password</Text>
+                            <Text className="text-gray-700 mb-2 font-medium">Password</Text>
                             <TextInput
-                                className="w-full bg-gray-50 dark:bg-[#1E1E1E] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-gray-900 dark:text-white"
+                                className="w-full bg-white border border-gray-250 rounded-xl px-4 py-3 text-gray-900"
                                 placeholder="••••••••"
                                 placeholderTextColor="#9CA3AF"
                                 secureTextEntry
@@ -158,7 +158,7 @@ export default function SignupScreen() {
                         </View>
 
                         <TouchableOpacity
-                            className="w-full bg-blue-600 py-4 rounded-xl shadow-lg shadow-blue-500/30 mt-6"
+                            className="w-full bg-primary py-4 rounded-full shadow-lg shadow-gray-950/15 mt-6"
                             onPress={handleSignup}
                         >
                             <Text className="text-white text-center font-bold text-lg">
@@ -168,12 +168,12 @@ export default function SignupScreen() {
                     </View>
 
                     <View className="flex-row justify-center mt-8 mb-8">
-                        <Text className="text-gray-500 dark:text-gray-400">
+                        <Text className="text-gray-500">
                             Already have an account?{' '}
                         </Text>
                         <Link href="/(auth)/login" asChild>
                             <TouchableOpacity>
-                                <Text className="text-blue-600 font-bold">Sign In</Text>
+                                <Text className="text-primary font-bold">Sign In</Text>
                             </TouchableOpacity>
                         </Link>
                     </View>

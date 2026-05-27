@@ -1,7 +1,7 @@
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
 import { useRouter, Stack } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, Text, View, TouchableOpacity, ActivityIndicator, Alert, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView, Text, View, TouchableOpacity, ActivityIndicator, Alert, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, MapPressEvent } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { VendorApiService } from '@/constants/ApiService';
@@ -139,15 +139,15 @@ export default function ShopLocationScreen() {
 
     if (loading) {
         return (
-            <SafeAreaView className="flex-1 bg-white dark:bg-[#121212] justify-center items-center">
-                <ActivityIndicator size="large" color="#2563EB" />
-                <Text className="text-gray-500 mt-2">Loading Map...</Text>
+            <SafeAreaView className="flex-1 bg-background justify-center items-center">
+                <ActivityIndicator size="large" color="#0F1115" />
+                <Text className="text-gray-500 mt-2 font-medium">Loading Map...</Text>
             </SafeAreaView>
         );
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-white dark:bg-[#121212]">
+        <SafeAreaView className="flex-1 bg-background">
             <Stack.Screen options={{ title: 'Edit Shop Location', headerShown: true }} />
             <KeyboardAvoidingView 
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
@@ -176,22 +176,22 @@ export default function ShopLocationScreen() {
                         <TouchableOpacity
                             onPress={useCurrentGPS}
                             style={{ elevation: 5 }}
-                            className="absolute bottom-6 right-6 bg-white dark:bg-[#1E1E1E] h-12 w-12 rounded-full items-center justify-center shadow-lg shadow-black/30"
+                            className="absolute bottom-6 right-6 bg-white h-12 w-12 rounded-full items-center justify-center shadow-lg shadow-gray-950/15 border border-gray-150"
                         >
-                            <MaterialIcons name="my-location" size={24} color="#2563EB" />
+                            <MaterialIcons name="my-location" size={24} color="#0F1115" />
                         </TouchableOpacity>
                     </View>
 
                     {/* Bottom Details Panel */}
-                    <View className="bg-white dark:bg-[#1E1E1E] p-5 rounded-t-3xl border-t border-gray-100 dark:border-gray-800 shadow-2xl">
-                        <Text className="text-lg font-bold text-gray-900 dark:text-white mb-2">Shop Location Details</Text>
-                        <Text className="text-gray-400 text-xs mb-4">
+                    <View className="bg-white p-6 rounded-t-3xl border-t border-gray-150 shadow-2xl">
+                        <Text className="text-lg font-bold text-gray-900 mb-1">Shop Location Details</Text>
+                        <Text className="text-gray-500 text-xs mb-4">
                             Tapping the map or dragging the pin updates your latitude & longitude coordinates.
                         </Text>
 
-                        <Text className="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2">Shop Address</Text>
+                        <Text className="text-gray-700 text-xs font-semibold uppercase tracking-wider mb-2">Shop Address</Text>
                         <TextInput
-                            className="bg-gray-50 dark:bg-[#121212] p-4 rounded-xl border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white h-20 text-sm mb-4"
+                            className="bg-white p-4 rounded-xl border border-gray-200 text-gray-900 h-20 text-sm mb-4"
                             placeholder="Enter full address of your shop"
                             placeholderTextColor="gray"
                             multiline
@@ -200,26 +200,26 @@ export default function ShopLocationScreen() {
                             onChangeText={setAddress}
                         />
 
-                        <View className="flex-row gap-4 mb-4">
-                            <View className="flex-1 bg-gray-50 dark:bg-[#121212] p-3 rounded-lg border border-gray-100 dark:border-gray-800">
+                        <View className="flex-row gap-4 mb-6">
+                            <View className="flex-1 bg-gray-50 p-3 rounded-lg border border-gray-150">
                                 <Text className="text-gray-400 text-[10px] uppercase font-bold">Latitude</Text>
-                                <Text className="text-gray-700 dark:text-gray-300 font-bold text-xs mt-0.5">{markerCoord.latitude.toFixed(6)}</Text>
+                                <Text className="text-gray-800 font-bold text-xs mt-0.5">{markerCoord.latitude.toFixed(6)}</Text>
                             </View>
-                            <View className="flex-1 bg-gray-50 dark:bg-[#121212] p-3 rounded-lg border border-gray-100 dark:border-gray-800">
+                            <View className="flex-1 bg-gray-50 p-3 rounded-lg border border-gray-150">
                                 <Text className="text-gray-400 text-[10px] uppercase font-bold">Longitude</Text>
-                                <Text className="text-gray-700 dark:text-gray-300 font-bold text-xs mt-0.5">{markerCoord.longitude.toFixed(6)}</Text>
+                                <Text className="text-gray-800 font-bold text-xs mt-0.5">{markerCoord.longitude.toFixed(6)}</Text>
                             </View>
                         </View>
 
                         <TouchableOpacity
                             onPress={handleSave}
                             disabled={saving}
-                            className={`bg-blue-600 py-4 rounded-xl items-center shadow-lg shadow-blue-500/20 ${saving ? 'opacity-70' : ''}`}
+                            className={`bg-primary py-4 rounded-full items-center shadow-lg shadow-gray-950/15 ${saving ? 'opacity-70' : ''}`}
                         >
                             {saving ? (
                                 <ActivityIndicator color="white" />
                             ) : (
-                                <Text className="text-white font-bold text-base">Save Shop Location</Text>
+                                <Text className="text-white font-bold text-lg">Save Shop Location</Text>
                             )}
                         </TouchableOpacity>
                     </View>

@@ -6,6 +6,7 @@ import { getBookingDetails, cancelBooking } from '@/constants/ApiService';
 
 interface BookingDetails {
     id: number;
+    bike: number;
     bike_brand: string;
     bike_model: string;
     bike_image: string | null;
@@ -229,7 +230,7 @@ export default function RideSummaryScreen() {
                     )}
                     {booking.can_review && (
                         <TouchableOpacity
-                            onPress={() => router.push({ pathname: '/ride/feedback', params: { bookingId: booking.id, bikeId: booking.id } })}
+                            onPress={() => router.push({ pathname: '/ride/feedback', params: { bookingId: booking.id, bikeId: booking.bike } })}
                             className="h-14 w-full rounded-full bg-[#00897B] items-center justify-center"
                         >
                             <Text className="text-white font-semibold text-base">Leave a Review</Text>

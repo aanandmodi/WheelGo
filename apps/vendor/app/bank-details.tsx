@@ -72,84 +72,92 @@ export default function BankDetailsScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50 dark:bg-[#121212]">
+        <SafeAreaView className="flex-1 bg-background">
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 className="flex-1"
             >
-                <ScrollView className="flex-1 px-4">
+                <ScrollView className="flex-1 px-6">
                     {/* Header */}
-                    <View className="flex-row items-center py-4">
-                        <TouchableOpacity onPress={() => router.back()} className="mr-3">
-                            <FontAwesome name="arrow-left" size={20} color="#6B7280" />
+                    <View className="flex-row items-center py-6">
+                        <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center bg-white rounded-full border border-gray-150 shadow-sm mr-4">
+                            <FontAwesome name="arrow-left" size={16} color="#0F1115" />
                         </TouchableOpacity>
-                        <Text className="text-2xl font-bold text-gray-900 dark:text-white">Bank Details</Text>
+                        <Text className="text-2xl font-bold text-gray-900">Bank Details</Text>
                     </View>
 
                     {loading ? (
-                        <ActivityIndicator size="large" color="#2563EB" className="mt-10" />
+                        <ActivityIndicator size="large" color="#0F1115" className="mt-10" />
                     ) : (
-                        <View className="bg-white dark:bg-[#1E1E1E] rounded-xl p-4 border border-gray-100 dark:border-gray-800">
+                        <View className="bg-white rounded-2xl p-6 border border-gray-150 shadow-sm">
                             {/* Info Banner */}
                             {form.is_verified && (
-                                <View className="bg-green-100 dark:bg-green-900/20 p-3 rounded-lg mb-4 flex-row items-center">
-                                    <FontAwesome name="check-circle" size={16} color="#16A34A" />
-                                    <Text className="text-green-700 dark:text-green-400 ml-2 text-sm">Verified</Text>
+                                <View className="bg-emerald-50 border border-emerald-250 p-4 rounded-xl mb-6 flex-row items-center">
+                                    <FontAwesome name="check-circle" size={18} color="#10B981" />
+                                    <Text className="text-emerald-800 ml-3 font-semibold text-sm">Account Verified</Text>
                                 </View>
                             )}
 
                             {/* Account Holder Name */}
-                            <Text className="text-gray-500 text-sm mb-2">Account Holder Name</Text>
-                            <TextInput
-                                className="bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-lg text-gray-900 dark:text-white mb-4"
-                                placeholder="As per bank records"
-                                placeholderTextColor="#9CA3AF"
-                                value={form.account_holder_name}
-                                onChangeText={(text) => setForm(prev => ({ ...prev, account_holder_name: text }))}
-                            />
+                            <View className="mb-4">
+                                <Text className="text-sm font-medium text-gray-750 mb-2">Account Holder Name</Text>
+                                <TextInput
+                                    className="bg-white p-4 rounded-xl border border-gray-200 text-gray-900"
+                                    placeholder="As per bank records"
+                                    placeholderTextColor="gray"
+                                    value={form.account_holder_name}
+                                    onChangeText={(text) => setForm(prev => ({ ...prev, account_holder_name: text }))}
+                                />
+                            </View>
 
                             {/* Account Number */}
-                            <Text className="text-gray-500 text-sm mb-2">Account Number</Text>
-                            <TextInput
-                                className="bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-lg text-gray-900 dark:text-white mb-4"
-                                placeholder="Enter account number"
-                                placeholderTextColor="#9CA3AF"
-                                keyboardType="numeric"
-                                value={form.account_number}
-                                onChangeText={(text) => setForm(prev => ({ ...prev, account_number: text }))}
-                            />
+                            <View className="mb-4">
+                                <Text className="text-sm font-medium text-gray-750 mb-2">Account Number</Text>
+                                <TextInput
+                                    className="bg-white p-4 rounded-xl border border-gray-200 text-gray-900"
+                                    placeholder="Enter account number"
+                                    placeholderTextColor="gray"
+                                    keyboardType="numeric"
+                                    value={form.account_number}
+                                    onChangeText={(text) => setForm(prev => ({ ...prev, account_number: text }))}
+                                />
+                            </View>
 
                             {/* IFSC Code */}
-                            <Text className="text-gray-500 text-sm mb-2">IFSC Code</Text>
-                            <TextInput
-                                className="bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-lg text-gray-900 dark:text-white mb-4"
-                                placeholder="e.g., SBIN0001234"
-                                placeholderTextColor="#9CA3AF"
-                                autoCapitalize="characters"
-                                value={form.ifsc_code}
-                                onChangeText={(text) => setForm(prev => ({ ...prev, ifsc_code: text.toUpperCase() }))}
-                            />
+                            <View className="mb-4">
+                                <Text className="text-sm font-medium text-gray-750 mb-2">IFSC Code</Text>
+                                <TextInput
+                                    className="bg-white p-4 rounded-xl border border-gray-200 text-gray-900"
+                                    placeholder="e.g., SBIN0001234"
+                                    placeholderTextColor="gray"
+                                    autoCapitalize="characters"
+                                    value={form.ifsc_code}
+                                    onChangeText={(text) => setForm(prev => ({ ...prev, ifsc_code: text.toUpperCase() }))}
+                                />
+                            </View>
 
                             {/* Bank Name */}
-                            <Text className="text-gray-500 text-sm mb-2">Bank Name</Text>
-                            <TextInput
-                                className="bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-lg text-gray-900 dark:text-white mb-6"
-                                placeholder="e.g., State Bank of India"
-                                placeholderTextColor="#9CA3AF"
-                                value={form.bank_name}
-                                onChangeText={(text) => setForm(prev => ({ ...prev, bank_name: text }))}
-                            />
+                            <View className="mb-8">
+                                <Text className="text-sm font-medium text-gray-750 mb-2">Bank Name</Text>
+                                <TextInput
+                                    className="bg-white p-4 rounded-xl border border-gray-200 text-gray-900"
+                                    placeholder="e.g., State Bank of India"
+                                    placeholderTextColor="gray"
+                                    value={form.bank_name}
+                                    onChangeText={(text) => setForm(prev => ({ ...prev, bank_name: text }))}
+                                />
+                            </View>
 
                             {/* Save Button */}
                             <TouchableOpacity
-                                className="bg-blue-600 py-4 rounded-lg items-center"
+                                className={`bg-primary py-4 rounded-full shadow-lg shadow-gray-950/15 items-center ${saving ? 'opacity-70' : ''}`}
                                 onPress={handleSave}
                                 disabled={saving}
                             >
                                 {saving ? (
                                     <ActivityIndicator size="small" color="white" />
                                 ) : (
-                                    <Text className="text-white font-bold text-base">
+                                    <Text className="text-white font-bold text-lg">
                                         {hasExisting ? 'Update Details' : 'Save Details'}
                                     </Text>
                                 )}

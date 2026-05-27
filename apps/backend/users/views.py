@@ -104,7 +104,14 @@ class VerifyOTPView(APIView):
                 return Response({"error": "OTP not found for this number"}, status=status.HTTP_400_BAD_REQUEST)
             
             if phone_otp.otp == otp:
+                # Check if OTP is expired (10 minutes validity)
+                now = timezone.now()
+                ten_min_ago = now - timedelta(minutes=10)
+                if phone_otp.created_at < ten_min_ago:
+                    return Response({"error": "OTP has expired"}, status=status.HTTP_400_BAD_REQUEST)
+
                 phone_otp.verified = True
+                phone_otp.otp = ""  # Clear OTP value to prevent replay
                 phone_otp.count = 0  # Reset rate limit count on success
                 phone_otp.save()
                 

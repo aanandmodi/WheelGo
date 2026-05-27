@@ -4,19 +4,21 @@ import {
     KeyboardAvoidingView,
     Platform,
     SafeAreaView,
-    Text,
-    TextInput,
     TouchableOpacity,
     View,
     Image,
     ActivityIndicator,
     Alert,
 } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import * as SecureStore from 'expo-secure-store';
 import { API_URL } from '@/constants/Api';
 
+import Input from '@/components/ui/Input';
+import GradientButton from '@/components/ui/GradientButton';
+import Typography from '@/components/ui/Typography';
 import { useAuth } from '@/context/AuthContext';
 
 // Complete any pending auth sessions
@@ -140,93 +142,89 @@ export default function LoginScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-white dark:bg-[#121212]">
+        <SafeAreaView className="flex-1 bg-background">
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                className="flex-1 justify-center px-8"
+                className="flex-1 justify-center px-6"
             >
-                <View className="items-center mb-10">
-                    <View className="h-24 w-24 bg-white rounded-2xl items-center justify-center mb-4 shadow-lg shadow-blue-500/10 overflow-hidden">
+                <Animated.View entering={FadeInDown.duration(600).springify()} className="items-center mb-8">
+                    <View className="h-24 w-24 bg-white rounded-2xl items-center justify-center mb-6 shadow-xl overflow-hidden">
                         <Image
                             source={require('@/assets/images/logo.png')}
                             className="w-full h-full"
                             resizeMode="contain"
                         />
                     </View>
-                    <Text className="text-3xl font-bold text-gray-900 dark:text-white">
-                        Vendor Portal
-                    </Text>
-                    <Text className="text-gray-500 mt-2 text-center dark:text-gray-400">
-                        Manage your fleet and bookings
-                    </Text>
-                </View>
+                    <Typography variant="h1" className="text-center mb-2">Vendor Portal</Typography>
+                    <Typography variant="body" className="text-center text-gray-500">Manage your fleet and bookings</Typography>
+                </Animated.View>
 
-                <View className="space-y-4">
-                    <View>
-                        <Text className="text-gray-700 dark:text-gray-300 mb-2 font-medium">
-                            Mobile Number
-                        </Text>
-                        <TextInput
-                            className="w-full bg-gray-50 dark:bg-[#1E1E1E] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-gray-900 dark:text-white"
-                            placeholder="9876543210"
-                            placeholderTextColor="#9CA3AF"
+                <Animated.View entering={FadeInDown.delay(200).duration(600).springify()}>
+                    <View className="bg-white p-6 rounded-3xl border border-border shadow-sm mb-6">
+                        <Typography variant="h3" className="mb-6 text-center text-gray-900">Welcome Back</Typography>
+
+                        <Input
+                            label="Mobile Number"
+                            placeholder="98765 43210"
                             keyboardType="phone-pad"
                             maxLength={10}
                             value={phone}
                             onChangeText={setPhone}
+                            className="mb-2"
+                        />
+
+                        <GradientButton
+                            title={loading ? "Sending OTP..." : "Continue"}
+                            onPress={handleLogin}
+                            disabled={phone.length !== 10 || loading}
+                            className="mt-4"
                         />
                     </View>
+                </Animated.View>
 
-                    <TouchableOpacity
-                        className="w-full bg-blue-600 py-4 rounded-xl shadow-lg shadow-blue-500/30 mt-4"
-                        onPress={handleLogin}
-                        disabled={loading}
-                    >
-                        <Text className="text-white text-center font-bold text-lg">
-                            {loading ? "Sending OTP..." : "Continue"}
-                        </Text>
-                    </TouchableOpacity>
-
+                <Animated.View entering={FadeInDown.delay(400).duration(600).springify()}>
                     {/* OR Divider */}
-                    <View className="flex-row items-center my-4">
-                        <View className="flex-1 h-px bg-gray-300 dark:bg-gray-700" />
-                        <Text className="mx-4 text-gray-500 dark:text-gray-400">OR</Text>
-                        <View className="flex-1 h-px bg-gray-300 dark:bg-gray-700" />
+                    <View className="flex-row items-center my-6">
+                        <View className="flex-1 h-px bg-gray-200" />
+                        <Typography variant="caption" className="mx-4 text-gray-400">OR CONTINUE WITH</Typography>
+                        <View className="flex-1 h-px bg-gray-200" />
                     </View>
 
                     {/* Google Sign-In Button */}
                     <TouchableOpacity
-                        className="w-full bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-gray-700 py-4 rounded-xl flex-row justify-center items-center"
+                        className="bg-white border border-gray-200 py-4 rounded-3xl flex-row justify-center items-center shadow-sm"
                         onPress={() => promptAsync()}
                         disabled={!request || googleLoading}
                     >
                         {googleLoading ? (
-                            <ActivityIndicator color="#4285F4" />
+                            <ActivityIndicator color="#0F1115" />
                         ) : (
                             <View className="flex-row items-center">
                                 <Image
                                     source={{ uri: 'https://www.google.com/favicon.ico' }}
-                                    className="w-5 h-5 mr-3"
+                                    className="w-6 h-6 mr-3"
                                     resizeMode="contain"
                                 />
-                                <Text className="text-gray-700 dark:text-gray-300 font-semibold">
+                                <Typography variant="body" className="font-semibold text-gray-700">
                                     Continue with Google
-                                </Text>
+                                </Typography>
                             </View>
                         )}
                     </TouchableOpacity>
-                </View>
 
-                <View className="flex-row justify-center mt-8">
-                    <Text className="text-gray-500 dark:text-gray-400">
-                        New to WheelGo?{' '}
-                    </Text>
-                    <Link href="/(auth)/signup" asChild>
-                        <TouchableOpacity>
-                            <Text className="text-blue-600 font-bold">Register Business</Text>
-                        </TouchableOpacity>
-                    </Link>
-                </View>
+                    <View className="flex-row justify-center mt-8">
+                        <Typography variant="body" className="text-gray-500">
+                            New to WheelGo?{' '}
+                        </Typography>
+                        <Link href="/(auth)/signup" asChild>
+                            <TouchableOpacity>
+                                <Typography variant="body" className="text-primary font-bold">
+                                    Register Business
+                                </Typography>
+                            </TouchableOpacity>
+                        </Link>
+                    </View>
+                </Animated.View>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );

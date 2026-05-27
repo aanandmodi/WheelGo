@@ -3,27 +3,30 @@ import Card from '@/components/ui/Card';
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Image, ScrollView, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { Image, ScrollView, Text, TouchableOpacity, View, ActivityIndicator, Alert } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { API_URL } from '@/constants/Api';
 import { useLocation } from '@/hooks/useLocation';
+import { useAuth } from '@/context/AuthContext';
+import { authFetch } from '@/constants/ApiService';
 
 export default function BikeDetailsScreen() {
     const { id } = useLocalSearchParams();
     const [bike, setBike] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const { location, loading: locationLoading } = useLocation();
+    const { user } = useAuth();
 
     useEffect(() => {
         const fetchBikeDetails = async () => {
             try {
-                let url = `${API_URL}/inventory/bikes/${id}/`;
+                let endpoint = `/inventory/bikes/${id}/`;
                 if (!locationLoading && location) {
-                    url += `?lat=${location.latitude}&lng=${location.longitude}`;
+                    endpoint += `?lat=${location.latitude}&lng=${location.longitude}`;
                 }
-                const response = await fetch(url);
+                const response = await authFetch(endpoint);
                 const data = await response.json();
                 if (response.ok) {
                     setBike(data);
@@ -37,6 +40,25 @@ export default function BikeDetailsScreen() {
 
         if (id) fetchBikeDetails();
     }, [id, locationLoading, location.latitude, location.longitude]);
+
+    const handleBookNow = () => {
+        if (!user) {
+            Alert.alert("Login Required", "Please login to book a bike.");
+            return;
+        }
+        if (!user.is_kyc_verified) {
+            Alert.alert(
+                "KYC Verification Required",
+                "Please verify your KYC via DigiLocker / Aadhaar before booking a ride.",
+                [
+                    { text: "Cancel", style: "cancel" },
+                    { text: "Verify Now", onPress: () => router.push('/kyc/instant') }
+                ]
+            );
+            return;
+        }
+        router.push({ pathname: '/booking', params: { id: bike.id } });
+    };
 
     if (loading) {
         return (
@@ -171,7 +193,7 @@ export default function BikeDetailsScreen() {
                             <Text className="text-3xl font-bold text-text-primary">₹{bike.price_per_hour}</Text>
                         </View>
                         <View className="flex-[1.5]">
-                            <AnimatedButton title="Book Now" onPress={() => router.push({ pathname: '/booking', params: { id: bike.id } })} />
+                            <AnimatedButton title="Book Now" onPress={handleBookNow} />
                         </View>
                     </View>
                 </Animated.View>

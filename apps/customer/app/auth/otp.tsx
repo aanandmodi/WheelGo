@@ -119,7 +119,7 @@ export default function OTPScreen() {
                                 onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}
                                 keyboardType="number-pad"
                                 maxLength={1}
-                                className="w-12 h-14 border-b border-[#dae7e5] text-center text-xl font-medium text-[#101818]"
+                                className="w-12 h-14 border-b border-gray-300 text-center text-xl font-medium text-[#101818]"
                                 selectTextOnFocus
                                 editable={!loading}
                             />
@@ -129,19 +129,19 @@ export default function OTPScreen() {
                     {/* Timer */}
                     <View className="flex-row justify-center gap-4 mb-8">
                         <View className="items-center">
-                            <View className="h-14 w-16 bg-[#f0f5f4] rounded-xl items-center justify-center mb-1">
+                            <View className="h-14 w-16 bg-gray-100 rounded-xl items-center justify-center mb-1">
                                 <Text className="text-lg font-bold text-[#101818]">00</Text>
                             </View>
                             <Text className="text-sm text-[#101818]">Hours</Text>
                         </View>
                         <View className="items-center">
-                            <View className="h-14 w-16 bg-[#f0f5f4] rounded-xl items-center justify-center mb-1">
+                            <View className="h-14 w-16 bg-gray-100 rounded-xl items-center justify-center mb-1">
                                 <Text className="text-lg font-bold text-[#101818]">00</Text>
                             </View>
                             <Text className="text-sm text-[#101818]">Minutes</Text>
                         </View>
                         <View className="items-center">
-                            <View className="h-14 w-16 bg-[#f0f5f4] rounded-xl items-center justify-center mb-1">
+                            <View className="h-14 w-16 bg-gray-100 rounded-xl items-center justify-center mb-1">
                                 <Text className="text-lg font-bold text-[#101818]">{timeLeft < 10 ? `0${timeLeft}` : timeLeft}</Text>
                             </View>
                             <Text className="text-sm text-[#101818]">Seconds</Text>
@@ -153,7 +153,7 @@ export default function OTPScreen() {
                 <View className="pb-10 gap-3">
                     <TouchableOpacity
                         onPress={() => handleVerify(otp.join(''))}
-                        className={`h-12 bg-[#008a7c] rounded-full justify-center items-center ${loading ? 'opacity-70' : ''}`}
+                        className={`h-12 bg-primary rounded-full justify-center items-center ${loading ? 'opacity-70' : ''}`}
                         disabled={loading}
                     >
                         {loading ? (

@@ -1,21 +1,21 @@
 export const Theme = {
   colors: {
-    primary: '#EA580C',     // Vibrant Orange (Ola/Rapido/Uber India-first energy)
-    secondary: '#0F172A',   // Deep Navy Accent
+    primary: '#0F1115',     // Carbon Black (Ola/Uber Sleek Premium Theme)
+    secondary: '#FFC72C',   // Taxi Gold Accent
     success: '#10B981',     // Success Green
     danger: '#EF4444',      // Danger Red
     warning: '#F59E0B',     // Warning Amber
     info: '#3B82F6',        // Info Blue
     background: {
       light: '#F8FAFC',
-      dark: '#0F172A',
+      dark: '#0F1115',
     },
     card: {
       light: '#FFFFFF',
-      dark: '#1E293B',
+      dark: '#1E1E1E',
     },
     text: {
-      primary: '#0F172A',
+      primary: '#0F1115',
       secondary: '#475569',
       light: '#FFFFFF',
       muted: '#94A3B8',

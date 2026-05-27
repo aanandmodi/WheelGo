@@ -49,39 +49,39 @@ export default function ProfileScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50 dark:bg-[#121212]">
+        <SafeAreaView className="flex-1 bg-background">
             <ScrollView className="flex-1 px-4 pt-4">
 
                 {/* Profile Card */}
-                <View className="bg-white dark:bg-[#1E1E1E] p-6 rounded-2xl items-center mb-6 shadow-sm border border-gray-100 dark:border-gray-800">
-                    <View className="h-24 w-24 bg-blue-100 dark:bg-blue-900/20 rounded-full items-center justify-center mb-4">
-                        <Text className="text-3xl font-bold text-blue-600">
+                <View className="bg-white p-6 rounded-3xl items-center mb-6 shadow-sm border border-border">
+                    <View className="h-24 w-24 bg-yellow-50 rounded-full items-center justify-center mb-4">
+                        <Text className="text-3xl font-bold text-secondary">
                             {profile ? profile.shop_name.charAt(0).toUpperCase() : 'V'}
                         </Text>
                     </View>
-                    <Text className="text-xl font-bold text-gray-900 dark:text-white">
+                    <Text className="text-xl font-bold text-gray-900">
                         {profile ? profile.shop_name : 'Loading...'}
                     </Text>
-                    <Text className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                    <Text className="text-gray-500 text-sm mt-1">
                         Phone: {profile ? profile.phone_number : '...'}
                     </Text>
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
+                    <Text className="text-gray-500 text-xs mt-0.5">
                         {profile ? profile.address : ''}
                     </Text>
-                    <View className="flex-row items-center mt-3 bg-yellow-100 dark:bg-yellow-900/20 px-3 py-1 rounded-full">
-                        <FontAwesome name="star" size={14} color="#EAB308" />
-                        <Text className="ml-1 font-bold text-yellow-700 dark:text-yellow-500">
+                    <View className="flex-row items-center mt-3 bg-yellow-50 px-3 py-1 rounded-full border border-yellow-100">
+                        <FontAwesome name="star" size={14} color="#FFC72C" />
+                        <Text className="ml-1 font-bold text-yellow-800">
                             {profile && profile.is_verified ? "Verified Vendor" : "Pending Verification"}
                         </Text>
                     </View>
                 </View>
 
                 {/* Menu Items */}
-                <View className="bg-white dark:bg-[#1E1E1E] rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-800 mb-8">
+                <View className="bg-white rounded-3xl overflow-hidden shadow-sm border border-border mb-8">
                     {MENU_ITEMS.map((item, index) => (
                         <TouchableOpacity
                             key={index}
-                            className={`flex-row items-center p-4 border-b border-gray-100 dark:border-gray-800 ${index === MENU_ITEMS.length - 1 ? 'border-b-0' : ''}`}
+                            className={`flex-row items-center p-4 border-b border-gray-100 ${index === MENU_ITEMS.length - 1 ? 'border-b-0' : ''}`}
                             onPress={() => {
                                 if (item.label === 'Logout') handleLogout();
                                 else if (item.route) router.push(item.route as any);
@@ -90,11 +90,11 @@ export default function ProfileScreen() {
                             <View className="w-10 items-center">
                                 <FontAwesome name={item.icon as any} size={20} color={item.label === 'Logout' ? '#EF4444' : '#6B7280'} />
                             </View>
-                            <Text className={`flex-1 font-medium ${item.color || 'text-gray-900 dark:text-white'}`}>{item.label}</Text>
+                            <Text className={`flex-1 font-medium ${item.color || 'text-gray-900'}`}>{item.label}</Text>
                             {item.type === 'toggle' ? (
                                 <Switch
                                     value={item.value}
-                                    trackColor={{ false: "#767577", true: "#2563EB" }}
+                                    trackColor={{ false: "#E5E7EB", true: "#FFC72C" }}
                                     thumbColor={"#f4f3f4"}
                                 />
                             ) : (

@@ -40,9 +40,9 @@ export default function InstantKYCScreen() {
         
         setLoading(true);
         try {
-            const response = await authFetch('/customers/profile/', {
+            const response = await authFetch('/customers/kyc/verify/', {
                 method: 'POST',
-                body: JSON.stringify({ is_kyc_verified: true }),
+                body: JSON.stringify({}),
             });
             
             if (response.ok) {

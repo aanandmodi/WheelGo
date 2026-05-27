@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Stack, router, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import '../global.css';
@@ -40,8 +40,24 @@ export default function Layout() {
 }
 
 function AppContent() {
-    const { isLoggedIn } = useAuth();
+    const { isLoggedIn, isLoading } = useAuth();
+    const segments = useSegments();
     useNotifications(isLoggedIn);
+
+    useEffect(() => {
+        if (!isLoading) {
+            const inAuthGroup = segments[0] === '(auth)';
+            if (!isLoggedIn && !inAuthGroup) {
+                router.replace('/(auth)/login');
+            } else if (isLoggedIn && inAuthGroup) {
+                router.replace('/(tabs)');
+            }
+        }
+    }, [isLoggedIn, isLoading, segments]);
+
+    if (isLoading) {
+        return <VendorSplashScreen />;
+    }
 
     return (
         <Stack screenOptions={{ headerShown: false }}>

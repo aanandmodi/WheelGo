@@ -23,8 +23,8 @@ export default function GradientButton({
 
     // Default gradients
     const gradients: Record<string, [string, string]> = {
-        primary: ['#FF7A00', '#EA580C'], // Vibrant Orange
-        secondary: ['#1E293B', '#0F172A'], // Deep Navy / Slate
+        primary: ['#1F2937', '#0F1115'], // Sleek Carbon Black
+        secondary: ['#FFD147', '#FFC72C'], // Taxi Gold
     };
 
     const activeGradient = colors || gradients[variant];
@@ -34,7 +34,7 @@ export default function GradientButton({
             onPress={onPress}
             activeOpacity={0.8}
             disabled={isLoading || props.disabled}
-            className={`rounded-3xl shadow-lg shadow-orange-500/20 ${props.disabled ? 'opacity-50' : ''} ${className}`}
+            className={`rounded-3xl shadow-lg ${variant === 'primary' ? 'shadow-gray-950/25' : 'shadow-yellow-500/15'} ${props.disabled ? 'opacity-50' : ''} ${className}`}
             {...props}
         >
             <LinearGradient

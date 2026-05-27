@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import { setSessionExpiredCallback } from '../constants/ApiService';
 
 interface User {
   id: number;
@@ -33,6 +34,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     loadStoredAuth();
+    setSessionExpiredCallback(() => {
+      logout();
+    });
+    return () => setSessionExpiredCallback(() => {});
   }, []);
 
   const loadStoredAuth = async () => {

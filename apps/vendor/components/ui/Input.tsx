@@ -16,7 +16,7 @@ export default function Input({ label, error, className, containerStyle = '', ..
                 <TextInput
                     className={`p-4 text-base text-gray-900 dark:text-white placeholder:text-gray-400 ${className}`}
                     placeholderTextColor="#64748B"
-                    selectionColor="#EA580C"
+                    selectionColor="#0F1115"
                     {...props}
                 />
             </View>

@@ -42,9 +42,47 @@ export const clearAuthData = async () => {
     ]);
 };
 
+let onSessionExpired: (() => void) | null = null;
+
+export const setSessionExpiredCallback = (callback: () => void) => {
+    onSessionExpired = callback;
+};
+
 // Authenticated fetch wrapper with 401 token refresh
 export const authFetch = async (endpoint: string, options: RequestInit = {}): Promise<Response> => {
-    const token = await getAccessToken();
+    let token = await getAccessToken();
+    const refreshToken = await getRefreshToken();
+
+    if (!token && !refreshToken) {
+        if (onSessionExpired) onSessionExpired();
+        throw new Error('Session expired');
+    }
+
+    // If access token is missing but refresh token is present, try refreshing first
+    if (!token && refreshToken) {
+        console.warn('Access token missing but refresh token present - refreshing first');
+        try {
+            const refreshResponse = await fetch(`${API_URL}/users/token/refresh/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refresh: refreshToken }),
+            });
+
+            if (!refreshResponse.ok) {
+                await clearAuthData();
+                if (onSessionExpired) onSessionExpired();
+                throw new Error('Session expired. Please login again.');
+            }
+
+            const { access } = await refreshResponse.json();
+            await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, access);
+            token = access;
+        } catch (err) {
+            await clearAuthData();
+            if (onSessionExpired) onSessionExpired();
+            throw new Error('Session expired. Please login again.');
+        }
+    }
 
     const headers = {
         'Content-Type': 'application/json',
@@ -60,10 +98,11 @@ export const authFetch = async (endpoint: string, options: RequestInit = {}): Pr
     // Handle 401 - token expired or invalid, attempt refresh
     if (response.status === 401) {
         console.warn('Authentication failed - attempting token refresh');
-        const refreshToken = await getRefreshToken();
+        const currentRefreshToken = await getRefreshToken();
         
-        if (!refreshToken) {
+        if (!currentRefreshToken) {
             await clearAuthData();
+            if (onSessionExpired) onSessionExpired();
             throw new Error('Session expired');
         }
 
@@ -71,11 +110,12 @@ export const authFetch = async (endpoint: string, options: RequestInit = {}): Pr
             const refreshResponse = await fetch(`${API_URL}/users/token/refresh/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refresh: refreshToken }),
+                body: JSON.stringify({ refresh: currentRefreshToken }),
             });
 
             if (!refreshResponse.ok) {
                 await clearAuthData();
+                if (onSessionExpired) onSessionExpired();
                 throw new Error('Session expired. Please login again.');
             }
 
@@ -93,6 +133,7 @@ export const authFetch = async (endpoint: string, options: RequestInit = {}): Pr
             });
         } catch (err) {
             await clearAuthData();
+            if (onSessionExpired) onSessionExpired();
             throw new Error('Session expired. Please login again.');
         }
     }
@@ -235,7 +276,7 @@ export const getBookings = async (filter?: string) => {
     return response.json();
 };
 
-export const getBookingDetails = async (bookingId: string) => {
+export const getBookingDetails = async (bookingId: string | number) => {
     const response = await authFetch(`/bookings/${bookingId}/`);
     if (!response.ok) throw new Error('Failed to fetch booking details');
     return response.json();
@@ -265,7 +306,7 @@ export const cancelBooking = async (bookingId: number, reason: string = 'Cancell
     return response.json();
 };
 
-export const getBookingQRCode = async (bookingId: string) => {
+export const getBookingQRCode = async (bookingId: string | number) => {
     const response = await authFetch(`/bookings/${bookingId}/qr-code/`);
     if (!response.ok) throw new Error('Failed to get QR code');
     return response.json();

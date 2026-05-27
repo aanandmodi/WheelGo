@@ -9,6 +9,15 @@ from .serializers import BookingSerializer, BookingCreateSerializer, BookingList
 class BookingViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
+    def update(self, request, *args, **kwargs):
+        return Response({"error": "Method not allowed. Use specific actions."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def partial_update(self, request, *args, **kwargs):
+        return Response({"error": "Method not allowed. Use specific actions."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def destroy(self, request, *args, **kwargs):
+        return Response({"error": "Method not allowed. Bookings cannot be deleted."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
     def get_serializer_class(self):
         if self.action == 'create':
             return BookingCreateSerializer

@@ -60,16 +60,16 @@ export default function SetupProfileScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-white dark:bg-[#121212]">
+        <SafeAreaView className="flex-1 bg-background">
             <View className="flex-1 p-6">
-                <Text className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Complete Profile</Text>
-                <Text className="text-gray-500 dark:text-gray-400 mb-8">Tell us about your rental business.</Text>
+                <Text className="text-2xl font-bold text-gray-900 mb-2">Complete Profile</Text>
+                <Text className="text-gray-500 mb-8">Tell us about your rental business.</Text>
 
                 <View className="space-y-4">
                     <View>
-                        <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Shop Name</Text>
+                        <Text className="text-sm font-medium text-gray-750 mb-2">Shop Name</Text>
                         <TextInput
-                            className="bg-gray-50 dark:bg-[#1E1E1E] p-4 rounded-xl border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white"
+                            className="bg-white p-4 rounded-xl border border-gray-200 text-gray-900"
                             placeholder="e.g. WheelGo Rentals"
                             placeholderTextColor="gray"
                             value={shopName}
@@ -78,9 +78,9 @@ export default function SetupProfileScreen() {
                     </View>
 
                     <View>
-                        <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Address</Text>
+                        <Text className="text-sm font-medium text-gray-750 mb-2">Address</Text>
                         <TextInput
-                            className="bg-gray-50 dark:bg-[#1E1E1E] p-4 rounded-xl border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white h-24"
+                            className="bg-white p-4 rounded-xl border border-gray-200 text-gray-900 h-24"
                             placeholder="Full address of your shop"
                             placeholderTextColor="gray"
                             multiline
@@ -96,7 +96,7 @@ export default function SetupProfileScreen() {
 
                 <View className="mt-8">
                     <TouchableOpacity
-                        className={`bg-blue-600 py-4 rounded-xl shadow-lg shadow-blue-500/30 ${loading ? 'opacity-70' : ''}`}
+                        className={`bg-primary py-4 rounded-full shadow-lg shadow-gray-950/15 ${loading ? 'opacity-70' : ''}`}
                         onPress={handleSaveProfile}
                         disabled={loading}
                     >

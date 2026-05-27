@@ -1,13 +1,14 @@
 import { router } from 'expo-router';
 import React, { createContext, useContext, useState } from 'react';
-
 import * as SecureStore from 'expo-secure-store';
+import { setSessionExpiredCallback } from '../constants/ApiService';
 
 type UserRole = 'consumer' | 'vendor' | null;
 
 interface AuthContextType {
     userRole: UserRole;
     isLoggedIn: boolean;
+    isLoading: boolean;
     login: (role?: UserRole, token?: string, refresh?: string) => void;
     logout: () => void;
     switchRole: () => void;
@@ -17,6 +18,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
     userRole: null,
     isLoggedIn: false,
+    isLoading: true,
     login: () => { },
     logout: () => { },
     switchRole: () => { },
@@ -29,6 +31,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [userRole, setUserRole] = useState<UserRole>(null);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [token, setToken] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Load Token on mount
     React.useEffect(() => {
@@ -44,9 +47,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 }
             } catch (e) {
                 console.error("Failed to load token", e);
+            } finally {
+                setIsLoading(false);
             }
         };
         loadToken();
+
+        setSessionExpiredCallback(() => {
+            logout();
+        });
+        return () => setSessionExpiredCallback(() => {});
     }, []);
 
     const login = (role: UserRole = 'vendor', accessToken?: string, refreshToken?: string) => {
@@ -79,7 +89,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ userRole, isLoggedIn, login, logout, switchRole, token }}>
+        <AuthContext.Provider value={{ userRole, isLoggedIn, isLoading, login, logout, switchRole, token }}>
             {children}
         </AuthContext.Provider>
     );

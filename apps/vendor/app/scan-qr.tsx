@@ -58,32 +58,34 @@ export default function ScanQRScreen() {
 
     if (hasPermission === null) {
         return (
-            <SafeAreaView className="flex-1 bg-black items-center justify-center">
-                <ActivityIndicator size="large" color="white" />
-                <Text className="text-white mt-4">Requesting camera permission...</Text>
+            <SafeAreaView className="flex-1 bg-primary items-center justify-center">
+                <ActivityIndicator size="large" color="#FFC72C" />
+                <Text className="text-white mt-4 font-medium">Requesting camera permission...</Text>
             </SafeAreaView>
         );
     }
 
     if (hasPermission === false) {
         return (
-            <SafeAreaView className="flex-1 bg-gray-900 items-center justify-center px-6">
-                <MaterialIcons name="no-photography" size={60} color="#EF4444" />
-                <Text className="text-white font-bold text-lg mt-4 text-center">Camera Access Required</Text>
+            <SafeAreaView className="flex-1 bg-primary items-center justify-center px-6">
+                <View className="h-20 w-20 bg-red-500/10 rounded-full items-center justify-center mb-6">
+                    <MaterialIcons name="no-photography" size={40} color="#EF4444" />
+                </View>
+                <Text className="text-white font-bold text-xl text-center">Camera Access Required</Text>
                 <Text className="text-gray-400 text-center mt-2">
                     Please allow camera access in your device settings to scan QR codes.
                 </Text>
                 <TouchableOpacity
                     onPress={requestCameraPermission}
-                    className="mt-6 bg-blue-600 px-6 py-3 rounded-full"
+                    className="mt-8 bg-secondary px-8 py-4 rounded-full shadow-lg shadow-gray-950/15"
                 >
-                    <Text className="text-white font-bold">Request Permission</Text>
+                    <Text className="text-gray-900 font-bold text-base">Request Permission</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     onPress={() => router.back()}
-                    className="mt-4"
+                    className="mt-4 p-2"
                 >
-                    <Text className="text-gray-400">Go Back</Text>
+                    <Text className="text-gray-400 font-semibold">Go Back</Text>
                 </TouchableOpacity>
             </SafeAreaView>
         );
@@ -91,36 +93,36 @@ export default function ScanQRScreen() {
 
     if (bookingDetails) {
         return (
-            <SafeAreaView className="flex-1 bg-[#0F172A] justify-center px-6">
-                <View className="bg-[#1E293B] border border-slate-700/50 p-6 rounded-3xl items-center shadow-2xl">
-                    <View className="h-20 w-20 bg-emerald-500/10 rounded-full items-center justify-center mb-6">
-                        <MaterialIcons name="check-circle" size={54} color="#10B981" />
+            <SafeAreaView className="flex-1 bg-primary justify-center px-6">
+                <View className="bg-white p-8 rounded-3xl items-center shadow-2xl">
+                    <View className="h-20 w-20 bg-emerald-100 rounded-full items-center justify-center mb-6">
+                        <MaterialIcons name="check-circle" size={48} color="#10B981" />
                     </View>
-                    <Text className="text-emerald-400 font-bold text-xl mb-1 text-center font-Outfit">Ride Started Successfully</Text>
-                    <Text className="text-slate-400 text-sm text-center mb-6">Booking #{bookingDetails.booking_id}</Text>
+                    <Text className="text-gray-900 font-bold text-2xl mb-1 text-center">Ride Started</Text>
+                    <Text className="text-gray-500 text-sm text-center mb-6">Booking #{bookingDetails.booking_id}</Text>
 
-                    <View className="w-full mb-8 bg-slate-800/40 p-4 rounded-2xl border border-slate-700/30">
-                        <View className="flex-row justify-between py-2 border-b border-slate-700/20">
-                            <Text className="text-slate-400 text-sm">Customer</Text>
-                            <Text className="text-white font-semibold text-sm">{bookingDetails.customer_name}</Text>
+                    <View className="w-full mb-8 bg-gray-50 p-5 rounded-2xl border border-gray-150">
+                        <View className="flex-row justify-between py-2.5 border-b border-gray-200">
+                            <Text className="text-gray-500 text-sm">Customer</Text>
+                            <Text className="text-gray-900 font-semibold text-sm">{bookingDetails.customer_name}</Text>
                         </View>
-                        <View className="flex-row justify-between py-2 border-b border-slate-700/20">
-                            <Text className="text-slate-400 text-sm">Vehicle</Text>
-                            <Text className="text-white font-semibold text-sm">{bookingDetails.bike_name}</Text>
+                        <View className="flex-row justify-between py-2.5 border-b border-gray-200">
+                            <Text className="text-gray-500 text-sm">Vehicle</Text>
+                            <Text className="text-gray-900 font-semibold text-sm">{bookingDetails.bike_name}</Text>
                         </View>
-                        <View className="flex-row justify-between py-2">
-                            <Text className="text-slate-400 text-sm">Drop-off Time</Text>
-                            <Text className="text-white font-semibold text-sm">
+                        <View className="flex-row justify-between py-2.5">
+                            <Text className="text-gray-500 text-sm">Drop-off Time</Text>
+                            <Text className="text-gray-900 font-semibold text-sm">
                                 {new Date(bookingDetails.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </Text>
                         </View>
                     </View>
 
                     <TouchableOpacity
-                        className="w-full bg-[#EA580C] py-4 rounded-xl shadow-lg shadow-[#EA580C]/20 items-center"
+                        className="w-full bg-primary py-4 rounded-full shadow-lg shadow-gray-950/15 items-center"
                         onPress={() => router.replace('/(tabs)/bookings')}
                     >
-                        <Text className="text-white font-bold text-base">Go to Bookings</Text>
+                        <Text className="text-white font-bold text-lg">Go to Bookings</Text>
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
@@ -144,9 +146,9 @@ export default function ScanQRScreen() {
                 <View className="flex-row items-center px-4 py-4">
                     <TouchableOpacity
                         onPress={() => router.back()}
-                        className="h-10 w-10 bg-black/50 rounded-full items-center justify-center"
+                        className="h-10 w-10 bg-black/60 rounded-full items-center justify-center border border-white/10"
                     >
-                        <MaterialIcons name="arrow-back" size={24} color="white" />
+                        <MaterialIcons name="arrow-back" size={20} color="white" />
                     </TouchableOpacity>
                     <Text className="flex-1 text-center text-white text-lg font-bold pr-10">Scan QR Code</Text>
                 </View>
@@ -154,17 +156,17 @@ export default function ScanQRScreen() {
                 {/* Scanner Frame */}
                 <View className="flex-1 items-center justify-center">
                     <View className="w-64 h-64 relative">
-                        {/* Corner decorations */}
-                        <View className="absolute top-0 left-0 w-10 h-10 border-l-4 border-t-4 border-white rounded-tl-lg" />
-                        <View className="absolute top-0 right-0 w-10 h-10 border-r-4 border-t-4 border-white rounded-tr-lg" />
-                        <View className="absolute bottom-0 left-0 w-10 h-10 border-l-4 border-b-4 border-white rounded-bl-lg" />
-                        <View className="absolute bottom-0 right-0 w-10 h-10 border-r-4 border-b-4 border-white rounded-br-lg" />
+                        {/* Corner decorations in secondary color (Taxi Gold) */}
+                        <View className="absolute top-0 left-0 w-10 h-10 border-l-4 border-t-4 border-secondary rounded-tl-lg" />
+                        <View className="absolute top-0 right-0 w-10 h-10 border-r-4 border-t-4 border-secondary rounded-tr-lg" />
+                        <View className="absolute bottom-0 left-0 w-10 h-10 border-l-4 border-b-4 border-secondary rounded-bl-lg" />
+                        <View className="absolute bottom-0 right-0 w-10 h-10 border-r-4 border-b-4 border-secondary rounded-br-lg" />
 
                         {/* Processing indicator */}
                         {processing && (
-                            <View className="absolute inset-0 bg-black/50 items-center justify-center rounded-lg">
-                                <ActivityIndicator size="large" color="white" />
-                                <Text className="text-white mt-2">Processing...</Text>
+                            <View className="absolute inset-0 bg-black/70 items-center justify-center rounded-lg">
+                                <ActivityIndicator size="large" color="#FFC72C" />
+                                <Text className="text-white mt-2 font-medium">Processing...</Text>
                             </View>
                         )}
                     </View>
@@ -172,11 +174,11 @@ export default function ScanQRScreen() {
 
                 {/* Instructions */}
                 <View className="px-6 pb-10">
-                    <View className="bg-black/50 rounded-2xl p-4">
+                    <View className="bg-black/75 rounded-2xl p-5 border border-white/10">
                         <Text className="text-white text-center font-bold text-lg mb-2">
                             Position QR Code in Frame
                         </Text>
-                        <Text className="text-gray-300 text-center">
+                        <Text className="text-gray-300 text-center text-sm">
                             Ask the customer to show their booking QR code. The ride will start automatically when scanned.
                         </Text>
                     </View>

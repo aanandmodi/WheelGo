@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
 import { getBikes, addFavorite, removeFavorite, getRecommendations } from '@/constants/ApiService';
 import { useLocation } from '@/hooks/useLocation';
+import { useAuth } from '@/context/AuthContext';
 
 const CATEGORIES = ['All', 'Electric', 'Sports', 'Cruiser', 'Scooter'];
 
@@ -36,6 +37,7 @@ const CITIES = [
 ];
 
 export default function HomeScreen() {
+  const { isLoggedIn } = useAuth();
   const [search, setSearch] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [cityModalVisible, setCityModalVisible] = useState(false);
@@ -76,6 +78,7 @@ export default function HomeScreen() {
   });
 
   const fetchBikes = async (showLoading = true) => {
+    if (!isLoggedIn) return;
     try {
       if (showLoading) setLoading(true);
       
@@ -166,10 +169,10 @@ export default function HomeScreen() {
   // Re-fetch when activeCategory or filters update, or when location resolves
   useFocusEffect(
     useCallback(() => {
-      if (!locationLoading) {
+      if (isLoggedIn && !locationLoading) {
         fetchBikes();
       }
-    }, [activeCategory, filters, locationLoading, selectedLocation.latitude, selectedLocation.longitude])
+    }, [isLoggedIn, activeCategory, filters, locationLoading, selectedLocation.latitude, selectedLocation.longitude])
   );
 
   const handleSearch = () => {
@@ -221,7 +224,7 @@ export default function HomeScreen() {
                 resizeMode="cover"
               />
               <View className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-md flex-row items-center">
-                <MaterialIcons name="star" size={10} color="#F59E0B" />
+                <MaterialIcons name="star" size={10} color="#FFC72C" />
                 <Text className="text-text-primary text-[10px] font-bold ml-0.5">
                   {item.average_rating || 'New'}
                 </Text>
@@ -319,15 +322,15 @@ export default function HomeScreen() {
 
         {/* Smart Travel Suggestion Banner */}
         {suggestion && (
-          <Animated.View entering={FadeInDown} className="bg-teal-50 px-6 py-2 border-b border-teal-100 flex-row items-center">
-            <Text className="text-teal-800 text-xs font-bold flex-1">{suggestion}</Text>
+          <Animated.View entering={FadeInDown} className="bg-yellow-50 px-6 py-2 border-b border-yellow-100 flex-row items-center">
+            <Text className="text-yellow-800 text-xs font-bold flex-1">{suggestion}</Text>
           </Animated.View>
         )}
 
         <View className="flex-1">
           {loading && !refreshing ? (
             <View className="flex-1 justify-center items-center">
-              <ActivityIndicator size="large" color="#008a7c" />
+              <ActivityIndicator size="large" color="#0F1115" />
               <Text className="text-gray-500 mt-2">Loading Bikes...</Text>
             </View>
           ) : isMapView ? (
@@ -387,7 +390,7 @@ export default function HomeScreen() {
                 <RefreshControl
                   refreshing={refreshing}
                   onRefresh={() => { setRefreshing(true); fetchBikes(false); }}
-                  colors={['#0F766E']}
+                  colors={['#0F1115']}
                 />
               }
               ListHeaderComponent={

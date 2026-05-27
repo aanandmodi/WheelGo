@@ -1,6 +1,7 @@
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
 import React, { useCallback, useState } from 'react';
 import { FlatList, Image, SafeAreaView, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAuth } from '@/context/AuthContext';
 import { VendorApiService } from '@/constants/ApiService';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -63,6 +64,20 @@ export default function BookingRequestsScreen() {
         }
     };
 
+    const handleCompleteRide = async (id: number) => {
+        try {
+            const data = await VendorApiService.completeBooking(id.toString());
+            // Update local state to reflect change
+            setRequests(prev => prev.map((r: any) =>
+                r.id === id ? { ...r, status: 'completed' } : r
+            ));
+            alert(data.message || 'Ride completed successfully!');
+        } catch (error: any) {
+            console.error('Failed to complete booking', error);
+            alert(error.message || 'Failed to complete booking');
+        }
+    };
+
     const getStatusBadgeStyle = (status: string) => {
         switch (status) {
             case 'pending': return { bg: 'bg-orange-100', text: 'text-orange-700' };
@@ -76,43 +91,48 @@ export default function BookingRequestsScreen() {
 
     const renderItem = ({ item }: { item: any }) => {
         const statusStyle = getStatusBadgeStyle(item.status);
+        const bikeName = item.bike_brand && item.bike_model ? `${item.bike_brand} ${item.bike_model}` : (item.bike_name || 'Vehicle');
+        const customerInfo = item.customer_name || item.customer_phone || (item.user ? `User #${item.user}` : 'Customer');
 
         return (
-            <View className="bg-white dark:bg-[#1E1E1E] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 mb-4">
+            <Animated.View 
+                entering={FadeInDown.duration(400).springify()}
+                className="bg-white rounded-2xl p-4 shadow-sm border border-border mb-4"
+            >
                 <View className="flex-row gap-4">
                     <Image
                         source={{ uri: item.bike_image || 'https://via.placeholder.com/150' }}
-                        className="h-20 w-20 rounded-lg bg-gray-200"
+                        className="h-20 w-20 rounded-xl bg-gray-100"
                         resizeMode="cover"
                     />
                     <View className="flex-1 justify-between">
                         <View>
                             <View className="flex-row justify-between items-start">
-                                <Text className="text-[#111817] dark:text-white font-bold text-base flex-1 mr-2">{item.bike_name || 'Bike'}</Text>
-                                <View className={`px-2 py-0.5 rounded ${statusStyle.bg}`}>
-                                    <Text className={`${statusStyle.text} font-bold text-[10px] uppercase`}>{item.status}</Text>
+                                <Text className="text-[#0F1115] font-bold text-base flex-1 mr-2" numberOfLines={1}>{bikeName}</Text>
+                                <View className={`px-2.5 py-0.5 rounded-md ${statusStyle.bg}`}>
+                                    <Text className={`${statusStyle.text} font-bold text-[9px] uppercase tracking-wide`}>{item.status}</Text>
                                 </View>
                             </View>
-                            <Text className="text-gray-500 text-sm mt-1">Customer: {item.user || 'User'}</Text>
+                            <Text className="text-gray-500 text-xs mt-1">Customer: {customerInfo}</Text>
                         </View>
                         <View className="flex-row justify-between items-end mt-2">
-                            <Text className="text-[#111817] dark:text-white font-medium text-sm">{item.start_time ? new Date(item.start_time).toLocaleDateString() : 'Date'}</Text>
-                            <Text className="text-blue-600 font-bold text-lg">₹{item.total_amount}</Text>
+                            <Text className="text-gray-400 font-medium text-xs">{item.start_time ? new Date(item.start_time).toLocaleDateString() : 'Date'}</Text>
+                            <Text className="text-primary font-bold text-lg">₹{item.total_amount}</Text>
                         </View>
                     </View>
                 </View>
 
                 {/* Actions based on status */}
                 {item.status === 'pending' && (
-                    <View className="flex-row gap-3 pt-4 mt-3 border-t border-gray-100 dark:border-gray-800">
+                    <View className="flex-row gap-3 pt-4 mt-3 border-t border-gray-100">
                         <TouchableOpacity
-                            className="flex-1 py-3 rounded-lg border border-red-100 bg-red-50 items-center justify-center"
+                            className="flex-1 py-3 rounded-full border border-gray-200 bg-transparent items-center justify-center"
                             onPress={() => handleAction(item.id, 'reject')}
                         >
-                            <Text className="text-red-700 font-bold text-sm">Reject</Text>
+                            <Text className="text-gray-500 font-bold text-sm">Reject</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            className="flex-1 py-3 rounded-lg bg-blue-600 items-center justify-center shadow-lg shadow-blue-500/30"
+                            className="flex-1 py-3 rounded-full bg-primary items-center justify-center shadow-md shadow-gray-950/15"
                             onPress={() => handleAction(item.id, 'accept')}
                         >
                             <Text className="text-white font-bold text-sm">Accept Request</Text>
@@ -122,35 +142,41 @@ export default function BookingRequestsScreen() {
 
                 {/* Scan QR button for confirmed bookings */}
                 {item.status === 'confirmed' && (
-                    <View className="pt-4 mt-3 border-t border-gray-100 dark:border-gray-800">
+                    <View className="pt-4 mt-3 border-t border-gray-100">
                         <TouchableOpacity
-                            className="py-3 rounded-lg bg-green-600 items-center justify-center flex-row"
+                            className="py-3 rounded-full bg-secondary items-center justify-center flex-row shadow-sm"
                             onPress={() => router.push('/scan-qr')}
                         >
-                            <MaterialIcons name="qr-code-scanner" size={20} color="white" />
-                            <Text className="text-white font-bold text-sm ml-2">Scan QR to Start Ride</Text>
+                            <MaterialIcons name="qr-code-scanner" size={18} color="#0F1115" />
+                            <Text className="text-[#0F1115] font-bold text-sm ml-2">Scan QR to Start Ride</Text>
                         </TouchableOpacity>
                     </View>
                 )}
 
-                {/* Active ride indicator */}
+                {/* Active ride indicator & Complete Ride Button */}
                 {item.status === 'active' && (
-                    <View className="pt-4 mt-3 border-t border-gray-100 dark:border-gray-800">
-                        <View className="py-3 rounded-lg bg-blue-50 items-center justify-center flex-row">
-                            <MaterialIcons name="directions-bike" size={20} color="#2563EB" />
-                            <Text className="text-blue-700 font-bold text-sm ml-2">Ride in Progress</Text>
+                    <View className="flex-row gap-3 pt-4 mt-3 border-t border-gray-100">
+                        <View className="flex-1 py-3 rounded-full bg-gray-100 items-center justify-center flex-row">
+                            <MaterialIcons name="directions-bike" size={18} color="#0F1115" />
+                            <Text className="text-[#0F1115] font-bold text-sm ml-2">Active Ride</Text>
                         </View>
+                        <TouchableOpacity
+                            className="flex-1 py-3 rounded-full bg-primary items-center justify-center shadow-sm"
+                            onPress={() => handleCompleteRide(item.id)}
+                        >
+                            <Text className="text-white font-bold text-sm">Complete Ride</Text>
+                        </TouchableOpacity>
                     </View>
                 )}
-            </View>
+            </Animated.View>
         );
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50 dark:bg-[#121212]">
+        <SafeAreaView className="flex-1 bg-background">
             <View className="flex-1 px-4">
                 <View className="py-4">
-                    <Text className="text-2xl font-bold text-gray-900 dark:text-white">Bookings</Text>
+                    <Text className="text-2xl font-bold text-[#0F1115]">Bookings</Text>
                 </View>
 
                 <View className="flex-row gap-2 mb-4 flex-wrap">
@@ -159,12 +185,12 @@ export default function BookingRequestsScreen() {
                             key={tab}
                             onPress={() => setStatusFilter(tab)}
                             className={`px-4 py-2 rounded-full border ${statusFilter === tab
-                                ? 'bg-gray-900 border-gray-900 dark:bg-white dark:border-white'
-                                : 'bg-transparent border-gray-200 dark:border-gray-800'
+                                ? 'bg-primary border-primary'
+                                : 'bg-transparent border-gray-250'
                                 }`}
                         >
-                            <Text className={`font-medium text-sm ${statusFilter === tab
-                                ? 'text-white dark:text-black'
+                            <Text className={`font-semibold text-sm ${statusFilter === tab
+                                ? 'text-white'
                                 : 'text-gray-500'
                                 }`}>{tab}</Text>
                         </TouchableOpacity>
@@ -172,7 +198,7 @@ export default function BookingRequestsScreen() {
                 </View>
 
                 {loading ? (
-                    <ActivityIndicator size="large" color="#2563EB" />
+                    <ActivityIndicator size="large" color="#0F1115" />
                 ) : (
                     <FlatList
                         data={filteredRequests}

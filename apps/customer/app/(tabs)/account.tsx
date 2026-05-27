@@ -17,12 +17,13 @@ interface Profile {
 }
 
 export default function AccountScreen() {
-    const { logout } = useAuth();
+    const { logout, isLoggedIn } = useAuth();
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
     const fetchProfile = async (showLoading = true) => {
+        if (!isLoggedIn) return;
         try {
             if (showLoading) setLoading(true);
             const data = await getCustomerProfile();
@@ -37,8 +38,10 @@ export default function AccountScreen() {
 
     useFocusEffect(
         useCallback(() => {
-            fetchProfile();
-        }, [])
+            if (isLoggedIn) {
+                fetchProfile();
+            }
+        }, [isLoggedIn])
     );
 
     const handleLogout = async () => {

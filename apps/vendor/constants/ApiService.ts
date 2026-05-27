@@ -1,9 +1,51 @@
 import { API_URL } from './Api';
 import * as SecureStore from 'expo-secure-store';
 
+let onSessionExpired: (() => void) | null = null;
+
+export const setSessionExpiredCallback = (callback: () => void) => {
+  onSessionExpired = callback;
+};
+
 // Authenticated fetch wrapper with automatic 401 token refresh
 const authFetch = async (endpoint: string, options: RequestInit = {}): Promise<Response> => {
-  const token = await SecureStore.getItemAsync('access_token');
+  let token = await SecureStore.getItemAsync('access_token');
+  const refreshToken = await SecureStore.getItemAsync('refresh_token');
+
+  if (!token && !refreshToken) {
+    if (onSessionExpired) onSessionExpired();
+    throw new Error('Session expired. Please login again.');
+  }
+
+  // If access token is missing but refresh token is present, try refreshing first
+  if (!token && refreshToken) {
+    console.warn('[VendorAPI] Access token missing but refresh token present - refreshing first');
+    try {
+      const refreshResponse = await fetch(`${API_URL}/users/token/refresh/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh: refreshToken }),
+      });
+
+      if (!refreshResponse.ok) {
+        await SecureStore.deleteItemAsync('access_token');
+        await SecureStore.deleteItemAsync('refresh_token');
+        await SecureStore.deleteItemAsync('userRole');
+        if (onSessionExpired) onSessionExpired();
+        throw new Error('Session expired. Please login again.');
+      }
+
+      const { access } = await refreshResponse.json();
+      await SecureStore.setItemAsync('access_token', access);
+      token = access;
+    } catch (err) {
+      await SecureStore.deleteItemAsync('access_token');
+      await SecureStore.deleteItemAsync('refresh_token');
+      await SecureStore.deleteItemAsync('userRole');
+      if (onSessionExpired) onSessionExpired();
+      throw new Error('Session expired. Please login again.');
+    }
+  }
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -19,9 +61,13 @@ const authFetch = async (endpoint: string, options: RequestInit = {}): Promise<R
   // Handle 401 - token expired, attempt refresh
   if (response.status === 401) {
     console.warn('[VendorAPI] 401 received - attempting token refresh');
-    const refreshToken = await SecureStore.getItemAsync('refresh_token');
+    const currentRefreshToken = await SecureStore.getItemAsync('refresh_token');
 
-    if (!refreshToken) {
+    if (!currentRefreshToken) {
+      await SecureStore.deleteItemAsync('access_token');
+      await SecureStore.deleteItemAsync('refresh_token');
+      await SecureStore.deleteItemAsync('userRole');
+      if (onSessionExpired) onSessionExpired();
       throw new Error('Session expired. Please login again.');
     }
 
@@ -29,10 +75,14 @@ const authFetch = async (endpoint: string, options: RequestInit = {}): Promise<R
       const refreshResponse = await fetch(`${API_URL}/users/token/refresh/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh: refreshToken }),
+        body: JSON.stringify({ refresh: currentRefreshToken }),
       });
 
       if (!refreshResponse.ok) {
+        await SecureStore.deleteItemAsync('access_token');
+        await SecureStore.deleteItemAsync('refresh_token');
+        await SecureStore.deleteItemAsync('userRole');
+        if (onSessionExpired) onSessionExpired();
         throw new Error('Session expired. Please login again.');
       }
 
@@ -49,6 +99,10 @@ const authFetch = async (endpoint: string, options: RequestInit = {}): Promise<R
         },
       });
     } catch (err) {
+      await SecureStore.deleteItemAsync('access_token');
+      await SecureStore.deleteItemAsync('refresh_token');
+      await SecureStore.deleteItemAsync('userRole');
+      if (onSessionExpired) onSessionExpired();
       throw new Error('Session expired. Please login again.');
     }
   }
@@ -58,7 +112,42 @@ const authFetch = async (endpoint: string, options: RequestInit = {}): Promise<R
 
 // Multipart auth fetch (for file uploads - no Content-Type header)
 const authFetchMultipart = async (endpoint: string, body: FormData): Promise<Response> => {
-  const token = await SecureStore.getItemAsync('access_token');
+  let token = await SecureStore.getItemAsync('access_token');
+  const refreshToken = await SecureStore.getItemAsync('refresh_token');
+
+  if (!token && !refreshToken) {
+    if (onSessionExpired) onSessionExpired();
+    throw new Error('Session expired. Please login again.');
+  }
+
+  // If access token is missing but refresh token is present, try refreshing first
+  if (!token && refreshToken) {
+    try {
+      const refreshResponse = await fetch(`${API_URL}/users/token/refresh/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh: refreshToken }),
+      });
+
+      if (!refreshResponse.ok) {
+        await SecureStore.deleteItemAsync('access_token');
+        await SecureStore.deleteItemAsync('refresh_token');
+        await SecureStore.deleteItemAsync('userRole');
+        if (onSessionExpired) onSessionExpired();
+        throw new Error('Session expired. Please login again.');
+      }
+
+      const { access } = await refreshResponse.json();
+      await SecureStore.setItemAsync('access_token', access);
+      token = access;
+    } catch (err) {
+      await SecureStore.deleteItemAsync('access_token');
+      await SecureStore.deleteItemAsync('refresh_token');
+      await SecureStore.deleteItemAsync('userRole');
+      if (onSessionExpired) onSessionExpired();
+      throw new Error('Session expired. Please login again.');
+    }
+  }
 
   const response = await fetch(`${API_URL}${endpoint}`, {
     method: 'POST',
@@ -69,25 +158,45 @@ const authFetchMultipart = async (endpoint: string, body: FormData): Promise<Res
   });
 
   if (response.status === 401) {
-    const refreshToken = await SecureStore.getItemAsync('refresh_token');
-    if (!refreshToken) throw new Error('Session expired. Please login again.');
+    const currentRefreshToken = await SecureStore.getItemAsync('refresh_token');
+    if (!currentRefreshToken) {
+      await SecureStore.deleteItemAsync('access_token');
+      await SecureStore.deleteItemAsync('refresh_token');
+      await SecureStore.deleteItemAsync('userRole');
+      if (onSessionExpired) onSessionExpired();
+      throw new Error('Session expired. Please login again.');
+    }
 
-    const refreshResponse = await fetch(`${API_URL}/users/token/refresh/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh: refreshToken }),
-    });
+    try {
+      const refreshResponse = await fetch(`${API_URL}/users/token/refresh/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh: currentRefreshToken }),
+      });
 
-    if (!refreshResponse.ok) throw new Error('Session expired. Please login again.');
+      if (!refreshResponse.ok) {
+        await SecureStore.deleteItemAsync('access_token');
+        await SecureStore.deleteItemAsync('refresh_token');
+        await SecureStore.deleteItemAsync('userRole');
+        if (onSessionExpired) onSessionExpired();
+        throw new Error('Session expired. Please login again.');
+      }
 
-    const { access } = await refreshResponse.json();
-    await SecureStore.setItemAsync('access_token', access);
+      const { access } = await refreshResponse.json();
+      await SecureStore.setItemAsync('access_token', access);
 
-    return fetch(`${API_URL}${endpoint}`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${access}` },
-      body,
-    });
+      return fetch(`${API_URL}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${access}` },
+        body,
+      });
+    } catch (err) {
+      await SecureStore.deleteItemAsync('access_token');
+      await SecureStore.deleteItemAsync('refresh_token');
+      await SecureStore.deleteItemAsync('userRole');
+      if (onSessionExpired) onSessionExpired();
+      throw new Error('Session expired. Please login again.');
+    }
   }
 
   return response;

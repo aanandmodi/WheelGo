@@ -26,6 +26,13 @@ class BikeViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     parser_classes = (MultiPartParser, FormParser)
     pagination_class = BikePagination
+
+    def check_object_permissions(self, request, obj):
+        super().check_object_permissions(request, obj)
+        if request.method in ['PUT', 'PATCH', 'DELETE']:
+            if not hasattr(request.user, 'vendor_profile') or obj.vendor != request.user.vendor_profile:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied("You do not own this vehicle.")
     
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:

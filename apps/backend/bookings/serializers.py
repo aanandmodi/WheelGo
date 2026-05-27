@@ -98,6 +98,10 @@ class BookingSerializer(serializers.ModelSerializer):
     vendor_name = serializers.CharField(source='bike.vendor.shop_name', read_only=True)
     vendor_phone = serializers.CharField(source='bike.vendor.user.phone_number', read_only=True)
     vendor_address = serializers.CharField(source='bike.vendor.address', read_only=True)
+    vendor_latitude = serializers.FloatField(source='bike.vendor.latitude', read_only=True)
+    vendor_longitude = serializers.FloatField(source='bike.vendor.longitude', read_only=True)
+    customer_name = serializers.CharField(source='user.full_name', read_only=True)
+    customer_phone = serializers.CharField(source='user.phone_number', read_only=True)
     can_cancel = serializers.SerializerMethodField()
     can_review = serializers.SerializerMethodField()
     duration_hours = serializers.SerializerMethodField()
@@ -105,8 +109,8 @@ class BookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = [
-            'id', 'user', 'bike', 'bike_brand', 'bike_model', 'bike_image', 'bike_number_plate',
-            'vendor_name', 'vendor_phone', 'vendor_address',
+            'id', 'user', 'customer_name', 'customer_phone', 'bike', 'bike_brand', 'bike_model', 'bike_image', 'bike_number_plate',
+            'vendor_name', 'vendor_phone', 'vendor_address', 'vendor_latitude', 'vendor_longitude',
             'start_time', 'end_time', 'duration_hours', 'total_amount',
             'status', 'payment_status', 'qr_code_image',
             'rejection_reason', 'actual_end_time',
@@ -136,10 +140,13 @@ class BookingListSerializer(serializers.ModelSerializer):
     bike_model = serializers.CharField(source='bike.model', read_only=True)
     bike_image = serializers.ImageField(source='bike.image', read_only=True)
     vendor_name = serializers.CharField(source='bike.vendor.shop_name', read_only=True)
+    customer_name = serializers.CharField(source='user.full_name', read_only=True)
+    customer_phone = serializers.CharField(source='user.phone_number', read_only=True)
     
     class Meta:
         model = Booking
         fields = [
             'id', 'bike_brand', 'bike_model', 'bike_image', 'vendor_name',
+            'customer_name', 'customer_phone',
             'start_time', 'end_time', 'total_amount', 'status', 'payment_status', 'created_at'
         ]

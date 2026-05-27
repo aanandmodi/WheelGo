@@ -25,6 +25,8 @@ export default function ShopLocationScreen() {
         longitude: 77.5946,
     });
     const [address, setAddress] = useState('');
+    const [city, setCity] = useState('');
+    const [areaName, setAreaName] = useState('');
 
     useEffect(() => {
         const fetchLocation = async () => {
@@ -44,6 +46,12 @@ export default function ShopLocationScreen() {
                 }
                 if (data.address) {
                     setAddress(data.address);
+                }
+                if (data.city) {
+                    setCity(data.city);
+                }
+                if (data.area_name) {
+                    setAreaName(data.area_name);
                 }
             } catch (error) {
                 console.error("Failed to load profile", error);
@@ -82,6 +90,8 @@ export default function ShopLocationScreen() {
                     place.country
                 ].filter(Boolean).join(', ');
                 setAddress(formattedAddress);
+                setCity(place.city || place.subregion || '');
+                setAreaName(place.district || place.subregion || place.name || '');
             }
         } catch (e) {
             console.warn("Reverse geocode failed", e);
@@ -126,6 +136,9 @@ export default function ShopLocationScreen() {
                 address: address,
                 latitude: markerCoord.latitude,
                 longitude: markerCoord.longitude,
+                city: city,
+                area_name: areaName,
+                full_address: address,
             });
             Alert.alert("Success", "Shop location updated successfully!", [
                 { text: "OK", onPress: () => router.back() }

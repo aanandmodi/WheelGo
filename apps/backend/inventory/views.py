@@ -85,6 +85,11 @@ class BikeViewSet(viewsets.ModelViewSet):
         if min_rating:
             queryset = queryset.filter(average_rating__gte=float(min_rating))
             
+        # Filter by City
+        city = self.request.query_params.get('city')
+        if city:
+            queryset = queryset.filter(vendor__city__icontains=city.strip())
+            
         # Filter by Location
         lat = self.request.query_params.get('lat')
         lng = self.request.query_params.get('lng')
@@ -122,7 +127,6 @@ class BikeViewSet(viewsets.ModelViewSet):
             lng = self.request.query_params.get('lng')
             if lat and lng:
                 lat, lng = float(lat), float(lng)
-                from common.utils import haversine
                 from django.db.models import Case, When
                 bikes_list = list(queryset)
                 bikes_list.sort(key=lambda b: haversine(lat, lng, b.vendor.latitude or 9999, b.vendor.longitude or 9999))
@@ -250,3 +254,37 @@ class BikeViewSet(viewsets.ModelViewSet):
             output.append(data)
             
         return Response(output)
+
+    @action(detail=False, methods=['get'], url_path='by-city')
+    def by_city(self, request):
+        """Get available bikes in a specific city."""
+        city = request.query_params.get('city', '').strip()
+        if not city:
+            return Response({"error": "City name is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        bikes = Bike.objects.select_related('vendor', 'category').filter(
+            vendor__city__icontains=city,
+            status='available'
+        )
+        
+        # Apply sorting if any
+        sort_by = request.query_params.get('sort_by')
+        if sort_by == 'price_low':
+            bikes = bikes.order_by('price_per_hour')
+        elif sort_by == 'price_high':
+            bikes = bikes.order_by('-price_per_hour')
+        elif sort_by == 'rating':
+            bikes = bikes.order_by('-average_rating')
+        elif sort_by == 'newest':
+            bikes = bikes.order_by('-created_at')
+        else:
+            bikes = bikes.order_by('-created_at')
+            
+        # Paginate results
+        page = self.paginate_queryset(bikes)
+        if page is not None:
+            serializer = BikeSerializer(page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+            
+        serializer = BikeSerializer(bikes, many=True, context={'request': request})
+        return Response(serializer.data)

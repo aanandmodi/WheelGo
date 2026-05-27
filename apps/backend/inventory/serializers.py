@@ -15,6 +15,9 @@ class BikeSerializer(serializers.ModelSerializer):
     vendor_address = serializers.CharField(source='vendor.address', read_only=True)
     vendor_latitude = serializers.FloatField(source='vendor.latitude', read_only=True)
     vendor_longitude = serializers.FloatField(source='vendor.longitude', read_only=True)
+    vendor_area = serializers.CharField(source='vendor.area_name', read_only=True)
+    vendor_city = serializers.CharField(source='vendor.city', read_only=True)
+    vendor_full_address = serializers.CharField(source='vendor.full_address', read_only=True)
     category_name = serializers.CharField(source='category.name', read_only=True)
     is_favorited = serializers.SerializerMethodField()
     distance_km = serializers.SerializerMethodField()
@@ -23,6 +26,7 @@ class BikeSerializer(serializers.ModelSerializer):
         model = Bike
         fields = [
             'id', 'vendor', 'vendor_name', 'vendor_address', 'vendor_latitude', 'vendor_longitude',
+            'vendor_area', 'vendor_city', 'vendor_full_address',
             'category', 'category_name', 'brand', 'model', 'number_plate', 'description',
             'price_per_hour', 'condition', 'status', 'image',
             'average_rating', 'review_count', 'is_favorited', 'distance_km', 'created_at'

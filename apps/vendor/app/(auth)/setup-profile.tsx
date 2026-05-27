@@ -24,6 +24,8 @@ export default function SetupProfileScreen() {
         
         let latitude = 12.9716;  // Fallback to Bangalore
         let longitude = 77.5946;
+        let city = 'Bangalore';
+        let areaName = 'Central';
 
         try {
             const { status } = await Location.requestForegroundPermissionsAsync();
@@ -31,6 +33,17 @@ export default function SetupProfileScreen() {
                 const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
                 latitude = loc.coords.latitude;
                 longitude = loc.coords.longitude;
+                
+                // Reverse geocode
+                try {
+                    const [place] = await Location.reverseGeocodeAsync({ latitude, longitude });
+                    if (place) {
+                        city = place.city || place.subregion || 'Bangalore';
+                        areaName = place.district || place.subregion || place.name || 'Central';
+                    }
+                } catch (e) {
+                    console.warn("Reverse geocode failed during profile setup:", e);
+                }
             } else {
                 console.warn("Location permission not granted, using fallback coordinates");
             }
@@ -44,7 +57,10 @@ export default function SetupProfileScreen() {
                 shop_name: shopName,
                 address: address,
                 latitude: latitude,
-                longitude: longitude
+                longitude: longitude,
+                city: city,
+                area_name: areaName,
+                full_address: address
             });
 
             // Profile Created

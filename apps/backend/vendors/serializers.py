@@ -6,14 +6,15 @@ class VendorSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Vendor
-        fields = ['id', 'user', 'shop_name', 'address', 'latitude', 'longitude', 'is_verified', 'phone_number']
+        fields = ['id', 'user', 'shop_name', 'address', 'latitude', 'longitude', 
+                  'area_name', 'city', 'full_address', 'is_verified', 'phone_number']
         read_only_fields = ['user', 'is_verified', 'phone_number']
 
 
 class CreateVendorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vendor
-        fields = ['shop_name', 'address', 'latitude', 'longitude']
+        fields = ['shop_name', 'address', 'latitude', 'longitude', 'area_name', 'city', 'full_address']
 
 
 class VendorBankDetailsSerializer(serializers.ModelSerializer):
